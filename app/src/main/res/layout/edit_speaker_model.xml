@@ -34,8 +34,10 @@
         android:id="@+id/add_speaker_name_editText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="Robert"
+        android:hint="Bob"
+        android:layout_marginLeft="5dp"
         android:layout_marginTop="60dp"
+        android:layout_marginStart="5dp"
         android:layout_toRightOf="@+id/add_speaker_name_textView"
         android:layout_toEndOf="@+id/add_speaker_name_textView"
         android:textColor="@color/black" />
@@ -71,7 +73,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="80dp"
+        android:layout_marginBottom="120dp"
         android:text="@string/update_speaker_button" />
 
 </RelativeLayout>

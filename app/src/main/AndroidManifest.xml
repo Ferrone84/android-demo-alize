@@ -13,7 +13,6 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".BaseActivity" />
         <activity
             android:name=".SpeakersList"
             android:label="@string/speakers_list">
@@ -22,6 +21,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".BaseActivity" />
         <activity android:name=".EditSpeakerModel" android:label="@string/edit_speaker_model"/>
         <activity android:name=".Verification" android:label="@string/verification"/>
 

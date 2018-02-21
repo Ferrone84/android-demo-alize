@@ -101,6 +101,19 @@ public class SpeakersList extends BaseActivity{
         updateListViewContent();
     }
 
+    public void identify(View v) {
+
+    }
+
+    public void removeAll(View v) {
+        try {
+            alizeSystem.removeAllSpeakers();
+        } catch (AlizeException e) {
+            e.printStackTrace();
+        }
+        adapter.clear();
+    }
+
     @Override
     public void onResume() {
         super.onResume();

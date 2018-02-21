@@ -6,7 +6,8 @@
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/rl"
         android:layout_width="match_parent"
-        android:layout_height="350dp"
+        android:layout_height="370dp"
+        android:background="@drawable/border"
         android:orientation="vertical">
 
         <TextView
@@ -29,18 +30,42 @@
     <RelativeLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/rl2"
-        android:layout_marginTop="350dp"
+        android:layout_marginTop="370dp"
         android:layout_width="match_parent"
-        android:layout_height="250dp"
+        android:layout_height="230dp"
         android:orientation="vertical">
 
         <Button
             android:id="@+id/add_button"
-            android:layout_marginTop="50dp"
+            android:layout_marginTop="40dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:text="@string/new_speaker"
+            android:textAllCaps="false"
+            android:textSize="20sp"
             android:onClick="addSpeaker"/>
+
+        <Button
+            android:id="@+id/identify_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/add_button"
+            android:layout_centerHorizontal="true"
+            android:text="@string/identify"
+            android:textAllCaps="false"
+            android:textSize="20sp"
+            android:onClick="identify"/>
+
+        <Button
+            android:id="@+id/removeall_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/identify_button"
+            android:layout_centerHorizontal="true"
+            android:text="@string/remove_all"
+            android:textAllCaps="false"
+            android:textSize="20sp"
+            android:onClick="removeAll"/>
     </RelativeLayout>
 </android.support.design.internal.ScrimInsetsFrameLayout>

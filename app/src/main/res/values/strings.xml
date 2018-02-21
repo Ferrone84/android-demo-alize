@@ -41,4 +41,6 @@
     <string name="speakername">SpeakerName</string>
     <string name="update_speaker_button">Update Speaker</string>
     <string name="update_speaker_model">Update speaker model</string>
+    <string name="identify">Identify</string>
+    <string name="remove_all">Remove All</string>
 </resources>
