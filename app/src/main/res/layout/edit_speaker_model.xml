@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rl"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/add_speaker_name_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/choose_a_speaker_name"
+        android:textColor="@color/black"
+        android:gravity="center"
+        android:layout_marginLeft="5dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="5dp"
+        style="@style/blackBorder"
+        />
+
+    <TextView
+        android:id="@+id/add_speaker_name_textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/speaker_name"
+        android:textColor="@color/black"
+        android:layout_marginTop="72dp"
+        android:layout_marginLeft="120dp"
+        android:textSize="15sp"
+        android:layout_marginStart="120dp" />
+
+    <EditText
+        android:id="@+id/add_speaker_name_editText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="Robert"
+        android:layout_marginTop="60dp"
+        android:layout_toRightOf="@+id/add_speaker_name_textView"
+        android:layout_toEndOf="@+id/add_speaker_name_textView"
+        android:textColor="@color/black" />
+
+    <TextView
+        android:id="@+id/add_speaker_record_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/update_speaker_model"
+        android:layout_marginTop="150dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        style="@style/blackBorder"
+        android:textColor="@color/black"
+        android:gravity="center"/>
+
+    <com.emrekose.recordbutton.RecordButton
+        android:id="@+id/recordBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        app:buttonGap="10dp"
+        app:buttonRadius="40dp"
+        app:maxMilisecond="10000"
+        app:progressColor="@color/colorPrimary"
+        app:progressStroke="15"
+        app:recordIcon="@drawable/ic_keyboard_voice_white_36dp" />
+
+    <Button
+        android:id="@+id/update_speaker_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="80dp"
+        android:text="@string/update_speaker_button" />
+
+</RelativeLayout>
