@@ -33,11 +33,7 @@ public class SpeakersList extends BaseActivity{
             super.onCreate(savedInstanceState);
             setContentView(R.layout.speakers_list);
 
-            //TODO virer ça
-            alizeSystem = (SimpleSpkDetSystem) getIntent().getSerializableExtra("alizeSystem");
-
-
-            //simpleSpkDetSystemInit();
+            simpleSpkDetSystemInit();
             setupListViewAdapter();
 
             rl = findViewById(R.id.rl);
