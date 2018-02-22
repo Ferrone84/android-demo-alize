@@ -43,6 +43,10 @@ public class SpeakerListAdapter extends ArrayAdapter<Speaker> {
         holder.update = row.findViewById(R.id.update_button);
         holder.update.setTag(holder.speaker);
         holder.test = row.findViewById(R.id.test_button);
+        if (holder.speaker.getName().isEmpty())
+            holder.test.setEnabled(false);
+        else
+            holder.test.setEnabled(true);
         holder.test.setTag(holder.speaker);
         holder.remove = row.findViewById(R.id.remove_button);
         holder.remove.setTag(holder.speaker);

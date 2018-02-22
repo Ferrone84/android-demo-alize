@@ -22,10 +22,12 @@ import AlizeSpkRec.SimpleSpkDetSystem;
 public class SpeakersList extends BaseActivity{
 
     SimpleSpkDetSystem alizeSystem;
+    ListView speakerListView;
     private SpeakerListAdapter adapter;
     String[] speakers;
     RelativeLayout rl;
     TextView noSpeakers;
+    Button identifyButton, removeAll;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -37,6 +39,8 @@ public class SpeakersList extends BaseActivity{
             setupListViewAdapter();
 
             rl = findViewById(R.id.rl);
+            identifyButton = findViewById(R.id.identify_button);
+            removeAll = findViewById(R.id.removeall_button);
             noSpeakers = findViewById(R.id.no_speakers);
             noSpeakers.setVisibility(View.INVISIBLE);
             speakers = alizeSystem.speakerIDs();
@@ -58,17 +62,25 @@ public class SpeakersList extends BaseActivity{
     }
 
     private void updateListViewContent() {
-        if (speakers.length == 0 && adapter.getCount() == 0) {
-            noSpeakers.setVisibility(View.VISIBLE);
+        Log.e("", "updateListViewContent: "+speakers.length+" / "+adapter.getCount());
+        if (speakers.length == 0) {
+            if (adapter.getCount() == 0)
+                noSpeakers.setVisibility(View.VISIBLE);
+            else
+                noSpeakers.setVisibility(View.INVISIBLE);
+            identifyButton.setEnabled(false);
+            removeAll.setEnabled(false);
         }
         else {
             noSpeakers.setVisibility(View.INVISIBLE);
+            identifyButton.setEnabled(true);
+            removeAll.setEnabled(true);
         }
     }
 
     private void setupListViewAdapter() {
         adapter = new SpeakerListAdapter(SpeakersList.this, R.layout.list_item, new ArrayList<Speaker>());
-        ListView speakerListView = findViewById(R.id.speakerListView);
+        speakerListView = findViewById(R.id.speakerListView);
         speakerListView.setAdapter(adapter);
     }
 
@@ -102,10 +114,11 @@ public class SpeakersList extends BaseActivity{
     }
 
     public void identify(View v) {
-
+        changeActivity(Verification.class, "");
     }
 
     public void removeAll(View v) {
+        //TODO trouver pourquoi removeAllSpeakers() plante l'appli
         /*try {
             alizeSystem.removeAllSpeakers();
         } catch (AlizeException e) {
@@ -179,23 +192,9 @@ public class SpeakersList extends BaseActivity{
             audioL16Samples[i] = (short) ((short)(tmpBytes[2*i])*256 + tmpBytes[2*i+1]);
         }
         alizeSystem.addAudio(audioL16Samples);
-        //alizeSystem.addAudio("lel"); //list_item IOException
-        //alizeSystem.removeSpeaker("lel"); //list_item simple Exception
-        //alizeSystem.loadSpeakerModel("",""); //list_item FileNotFoundException
-        //alizeSystem.createSpeakerModel("lel");
-        //alizeSystem.createSpeakerModel("lel"); //list_item IdAlreadyExistsException
-        //InputStream list_item = getApplicationContext().getAssets().open("gmm/AG.gmm");
-        //alizeSystem.loadSpeakerModel("AG",list_item);
-        //alizeSystem.loadSpeakerModel("AG",list_item);//eof exception !?? //faire remonter l'erreur créer une issue
-        //alizeSystem.addFeatures("lel"); //list_item FileNotFoundException
-        //alizeSystem.saveSpeakerModel("",""); //mixture not found ?
-        alizeSystem.createSpeakerModel("UV");
-        alizeSystem.saveSpeakerModel("UV","montestsave"); //pas besoin de spécifier d'extension
-        SimpleSpkDetSystem.SpkRecResult srr = alizeSystem.verifySpeaker("UV");
-        System.out.println(srr.speakerId+" "+srr.match+" / "+srr.score); //ça ça marche
 
         // Train a model with the audio
-//        alizeSystem.createSpeakerModel("UV");
+        alizeSystem.createSpeakerModel("UV");
 
         System.out.println("Status after training first speaker model (UV):");
         System.out.println("  # of features: " + alizeSystem.featureCount());
