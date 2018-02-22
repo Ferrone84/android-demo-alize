@@ -106,12 +106,13 @@ public class SpeakersList extends BaseActivity{
     }
 
     public void removeAll(View v) {
-        try {
+        /*try {
             alizeSystem.removeAllSpeakers();
         } catch (AlizeException e) {
             e.printStackTrace();
-        }
+        }*/
         adapter.clear();
+        updateListViewContent();
     }
 
     @Override

@@ -10,7 +10,8 @@
         android:layout_width="0sp"
         android:layout_height="match_parent"
         android:layout_weight="1.5"
-        android:layout_marginLeft="5dp"
+        android:textAlignment="center"
+        android:textColor="@color/black"
         android:gravity="center_vertical"
         android:hint="@string/speaker_name" />
 

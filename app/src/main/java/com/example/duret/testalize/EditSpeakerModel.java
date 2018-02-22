@@ -1,6 +1,5 @@
 package com.example.duret.testalize;
 
-import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
@@ -10,13 +9,11 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RelativeLayout;
 
 import com.emrekose.recordbutton.OnRecordListener;
 import com.emrekose.recordbutton.RecordButton;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import AlizeSpkRec.AlizeException;
 import AlizeSpkRec.IdAlreadyExistsException;
@@ -30,13 +27,16 @@ public class EditSpeakerModel extends BaseActivity {
     MediaRecorder mediaRecorder;
     SimpleSpkDetSystem alizeSystem;
     String audioSavePathInDevice = null;
+    String[] speakers;
+    int speakersCount;
     String speakerId = "";
     boolean newSpeaker = false;
     boolean isRecording = false;
     boolean recordExist = false;
+    boolean speakerIdExist = false;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) { // TODO apparemment mes problèmes d'appli qui plante sont liés au fait que j'utilise pas cette variable
+    public void onCreate(Bundle savedInstanceState) {
         try {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.edit_speaker_model);
@@ -47,9 +47,11 @@ public class EditSpeakerModel extends BaseActivity {
             recordButton = findViewById(R.id.recordBtn);
             updateSpeaker = findViewById(R.id.update_speaker_button);
             updateSpeaker.setEnabled(false);
+            speakers = alizeSystem.speakerIDs();
+            speakersCount = speakers.length;
 
             final String originalSpeakerId = speakerId;
-            recordButton.setMaxMilisecond(3000);
+            recordButton.setMaxMilisecond(3000);// TODO enlever ça
 
             if (speakerId.isEmpty()) {
                 Log.e("", "NULL ");
@@ -77,6 +79,19 @@ public class EditSpeakerModel extends BaseActivity {
                 @Override
                 public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                     speakerId = charSequence.toString();
+                    if (speakersCount != 0) {
+                        speakerIdExist = false;
+                        for (String spkId : speakers) {
+                            if (spkId.equals(speakerId) && !speakerId.equals(originalSpeakerId)) {
+                                speakerIdExist = true;
+                                break;
+                            }
+                        }
+                        if (speakerIdExist) {
+                            editSpeakerName.setError("This speaker name already exist !");
+                            updateSpeaker.setEnabled(false);
+                        }
+                    }
                 }
 
                 @Override
@@ -87,7 +102,7 @@ public class EditSpeakerModel extends BaseActivity {
                     else {
                         recordButton.setVisibility(View.INVISIBLE);
                     }
-                    if (recordExist) {
+                    if (recordExist && !speakerIdExist) {
                         updateSpeaker.setEnabled(true);
                     }
                 }
@@ -126,7 +141,7 @@ public class EditSpeakerModel extends BaseActivity {
                     mediaRecorder.stop();
                     recordExist = true;
                     isRecording = false;
-                    if (!speakerId.equals("NoName")) {
+                    if (!speakerId.equals("NoName") && !speakerIdExist) {
                         updateSpeaker.setEnabled(true);
                     }
                     try {
