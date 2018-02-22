@@ -170,7 +170,6 @@ public class EditSpeakerModel extends BaseActivity {
 
                         alizeSystem.resetAudio();
                         alizeSystem.resetFeatures();
-                        makeToast("Changes applied !");
                         finish();
                     } catch (AlizeException e) {
                         e.printStackTrace();
