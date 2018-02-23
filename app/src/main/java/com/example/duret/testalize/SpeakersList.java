@@ -62,14 +62,14 @@ public class SpeakersList extends BaseActivity{
     }
 
     private void updateListViewContent() {
-        Log.e("", "updateListViewContent: "+speakers.length+" / "+adapter.getCount());
         if (speakers.length == 0) {
-            if (adapter.getCount() == 0)
+            if (adapter.getCount() == 0) {
                 noSpeakers.setVisibility(View.VISIBLE);
+                identifyButton.setEnabled(false);
+                removeAll.setEnabled(false);
+            }
             else
                 noSpeakers.setVisibility(View.INVISIBLE);
-            identifyButton.setEnabled(false);
-            removeAll.setEnabled(false);
         }
         else {
             noSpeakers.setVisibility(View.INVISIBLE);
@@ -117,7 +117,7 @@ public class SpeakersList extends BaseActivity{
         changeActivity(Verification.class, "");
     }
 
-    public void removeAll(View v) {
+    public void removeAll(View v) throws AlizeException {
         //TODO trouver pourquoi removeAllSpeakers() plante l'appli
         /*try {
             alizeSystem.removeAllSpeakers();
@@ -125,6 +125,7 @@ public class SpeakersList extends BaseActivity{
             e.printStackTrace();
         }*/
         adapter.clear();
+        refreshSpeakersList();
         updateListViewContent();
     }
 
@@ -133,7 +134,6 @@ public class SpeakersList extends BaseActivity{
         super.onResume();
         refreshSpeakersList();
         updateListViewContent();
-        clearAndFill();
     }
 
     private void refreshSpeakersList() {
