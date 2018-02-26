@@ -17,7 +17,7 @@
     <string name="main_menu">Main menu</string>
     <string name="speakers_list">Speakers list</string>
     <string name="verification">Verification</string>
-    <string name="no_speakers">There is no speaker in the system at the moment.</string>
+    <string name="no_speakers">There are no speakers in the system at the moment.</string>
     <string name="edit_speaker">Edit Model</string>
     <string name="delete_speaker">Delete</string>
     <string name="add_speaker">Add Speaker</string>

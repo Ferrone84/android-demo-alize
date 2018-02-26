@@ -20,7 +20,7 @@ public class Verification extends BaseActivity{
     final int SUCCESS_COLOR = Color.GREEN;
     SimpleSpkDetSystem alizeSystem;
     String speakerId = "";
-    TextView textViewTitle, resultText;
+    TextView resultText;
     RecordButton recordButton;
     MediaRecorder mediaRecorder;
     String audioSavePathInDevice = null;
@@ -35,7 +35,6 @@ public class Verification extends BaseActivity{
 
             alizeSystem = (SimpleSpkDetSystem) getIntent().getSerializableExtra("alizeSystem");
             speakerId = getIntent().getStringExtra("speakerId");
-            textViewTitle = findViewById(R.id.verification_title);
             recordButton = findViewById(R.id.recordBtn);
             resultText = findViewById(R.id.result_text);
 
@@ -47,7 +46,6 @@ public class Verification extends BaseActivity{
                 title = "Identify a speaker";
             }
             setTitle(title);
-            textViewTitle.setText(title);
 
             if (checkPermission()) {
                 audioSavePathInDevice =

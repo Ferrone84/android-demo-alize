@@ -1,58 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.internal.ScrimInsetsFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rl"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:background="@drawable/border"
+    android:orientation="vertical">
 
-    <RelativeLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/rl"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:background="@drawable/border"
-        android:orientation="vertical">
+    <com.emrekose.recordbutton.RecordButton
+        android:id="@+id/recordBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="13dp"
+        app:buttonGap="10dp"
+        app:buttonRadius="40dp"
+        app:maxMilisecond="10000"
+        app:progressColor="@color/colorPrimary"
+        app:progressStroke="15"
+        app:recordIcon="@drawable/ic_keyboard_voice_white_36dp" />
 
-        <TextView
-            android:id="@+id/verification_title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/black"
-            android:gravity="center"
-            android:layout_marginLeft="5dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginRight="5dp"
-            style="@style/blackBorder" />
-
-        <com.emrekose.recordbutton.RecordButton
-            android:id="@+id/recordBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            app:buttonGap="10dp"
-            app:buttonRadius="40dp"
-            app:maxMilisecond="10000"
-            app:progressColor="@color/colorPrimary"
-            app:progressStroke="15"
-            app:recordIcon="@drawable/ic_keyboard_voice_white_36dp" />
-
-    </RelativeLayout>
-
-
-    <RelativeLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/rl2"
-        android:layout_marginTop="300dp"
+    <TextView
+        android:id="@+id/result_text"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:gravity="center"
+        android:textSize="60sp"/>
 
-        <TextView
-            android:id="@+id/result_text"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:textSize="60sp"/>
-
-    </RelativeLayout>
-</android.support.design.internal.ScrimInsetsFrameLayout>
+</RelativeLayout>

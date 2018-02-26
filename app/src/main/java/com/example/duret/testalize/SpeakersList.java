@@ -3,6 +3,7 @@ package com.example.duret.testalize;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.constraint.ConstraintLayout;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,7 +26,6 @@ public class SpeakersList extends BaseActivity{
     ListView speakerListView;
     private SpeakerListAdapter adapter;
     String[] speakers;
-    RelativeLayout rl;
     TextView noSpeakers;
     Button identifyButton, removeAll;
 
@@ -38,7 +38,6 @@ public class SpeakersList extends BaseActivity{
             simpleSpkDetSystemInit();
             setupListViewAdapter();
 
-            rl = findViewById(R.id.rl);
             identifyButton = findViewById(R.id.identify_button);
             removeAll = findViewById(R.id.removeall_button);
             noSpeakers = findViewById(R.id.no_speakers);
@@ -132,6 +131,7 @@ public class SpeakersList extends BaseActivity{
     @Override
     public void onResume() {
         super.onResume();
+        if (alizeSystem == null) {return;}
         refreshSpeakersList();
         updateListViewContent();
     }
