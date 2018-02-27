@@ -22,12 +22,11 @@ import AlizeSpkRec.SimpleSpkDetSystem;
 
 public class SpeakersList extends BaseActivity{
 
-    SimpleSpkDetSystem alizeSystem;
-    ListView speakerListView;
+    private SimpleSpkDetSystem alizeSystem;
     private SpeakerListAdapter adapter;
-    String[] speakers;
-    TextView noSpeakers;
-    Button identifyButton, removeAll;
+    private String[] speakers;
+    private TextView noSpeakers;
+    private Button identifyButton, removeAll;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -79,7 +78,7 @@ public class SpeakersList extends BaseActivity{
 
     private void setupListViewAdapter() {
         adapter = new SpeakerListAdapter(SpeakersList.this, R.layout.list_item, new ArrayList<Speaker>());
-        speakerListView = findViewById(R.id.speakerListView);
+        ListView speakerListView = findViewById(R.id.speakerListView);
         speakerListView.setAdapter(adapter);
     }
 
@@ -108,8 +107,9 @@ public class SpeakersList extends BaseActivity{
     }
 
     public void addSpeaker(View v) {
-        adapter.insert(new Speaker(""), adapter.getCount());
-        updateListViewContent();
+        //adapter.insert(new Speaker(""), adapter.getCount());
+        //updateListViewContent();
+        changeActivity(EditSpeakerModel.class, "");
     }
 
     public void identify(View v) {
@@ -131,8 +131,8 @@ public class SpeakersList extends BaseActivity{
     @Override
     public void onResume() {
         super.onResume();
-        if (alizeSystem == null) {return;}
         refreshSpeakersList();
+        clearAndFill();
         updateListViewContent();
     }
 
@@ -146,17 +146,13 @@ public class SpeakersList extends BaseActivity{
 
     private void changeActivity(Class toActivity, String spkId) {
         Intent intent = new Intent(SpeakersList.this, toActivity);
-        intent.putExtra("alizeSystem", alizeSystem);
         intent.putExtra("speakerId", spkId);
         startActivity(intent);
     }
 
     public void simpleSpkDetSystemInit() throws Throwable {
         // Initialization:
-        // We create a new spk det system with a config (extracted from the assets) and a directory where it can store files (models + temporary files)
-        InputStream configAsset = getApplicationContext().getAssets().open("AlizeDefault.cfg");
-        alizeSystem = new SimpleSpkDetSystem(configAsset, getApplicationContext().getFilesDir().getPath());
-        configAsset.close();
+        alizeSystem = SharedAlize.getInstance(getApplicationContext());
 
         // We also load the background model from the application assets
         InputStream backgroundModelAsset = getApplicationContext().getAssets().open("gmm/world.gmm");

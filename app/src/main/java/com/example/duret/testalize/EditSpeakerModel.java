@@ -1,19 +1,22 @@
 package com.example.duret.testalize;
 
+import android.media.AudioFormat;
+import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
-import com.emrekose.recordbutton.OnRecordListener;
-import com.emrekose.recordbutton.RecordButton;
-
-import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import AlizeSpkRec.AlizeException;
 import AlizeSpkRec.IdAlreadyExistsException;
@@ -21,19 +24,26 @@ import AlizeSpkRec.SimpleSpkDetSystem;
 
 public class EditSpeakerModel extends BaseActivity {
 
-    RecordButton recordButton;
-    Button updateSpeaker;
-    EditText editSpeakerName;
-    MediaRecorder mediaRecorder;
-    SimpleSpkDetSystem alizeSystem;
-    String audioSavePathInDevice = null;
-    String[] speakers;
-    int speakersCount;
-    String speakerId = "";
-    boolean newSpeaker = false;
-    boolean isRecording = false;
-    boolean recordExist = false;
-    boolean speakerIdExist = false;
+    private static final int RECORDER_SAMPLERATE = 8000;
+    private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
+    private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+    private int BufferElements2Rec = 1024; // want to play 2048 (2K) since 2 bytes we use only 1024
+    private int BytesPerElement = 2; // 2 bytes in 16bit format
+
+    private AudioRecord recorder = null;
+    private Thread recordingThread = null;
+    private short sData[];
+    private Button updateSpeaker, stopButton, startButton;
+    private TextView timeText;
+    private EditText editSpeakerName;
+    private SimpleSpkDetSystem alizeSystem;
+    private String[] speakers;
+    private int speakersCount;
+    private String speakerId = "";
+    private boolean newSpeaker = false;
+    private boolean isRecording = false;
+    private boolean recordExist = false;
+    private boolean speakerIdExist = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -41,35 +51,34 @@ public class EditSpeakerModel extends BaseActivity {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.edit_speaker_model);
 
-            alizeSystem = (SimpleSpkDetSystem) getIntent().getSerializableExtra("alizeSystem");
+            alizeSystem = SharedAlize.getInstance(getApplicationContext());
             speakerId = getIntent().getStringExtra("speakerId");
             editSpeakerName = findViewById(R.id.add_speaker_name_editText);
-            recordButton = findViewById(R.id.recordBtn);
+            timeText = findViewById(R.id.timeText);
+            startButton = findViewById(R.id.startBtn);
+            stopButton = findViewById(R.id.stopBtn);
             updateSpeaker = findViewById(R.id.update_speaker_button);
             updateSpeaker.setEnabled(false);
             speakers = alizeSystem.speakerIDs();
             speakersCount = speakers.length;
 
             final String originalSpeakerId = speakerId;
-            recordButton.setMaxMilisecond(3000);// TODO enlever ça
 
             if (speakerId.isEmpty()) {
                 speakerId = "NoName";
                 newSpeaker =  true;
-                recordButton.setVisibility(View.INVISIBLE);
+                startButton.setVisibility(View.INVISIBLE);
             }
             else {
                 editSpeakerName.setText(speakerId);
             }
 
-            setTitle("Edit '" + speakerId + "' Model");
-            if (checkPermission()) {
-                audioSavePathInDevice =
-                    Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmp.3gp";
+            String title = "Edit '" + speakerId + "' Model";
+            if (newSpeaker) {
+                title = "New Speaker";
+                updateSpeaker.setText(R.string.new_speaker);
             }
-            else {
-                requestPermission();
-            }
+            setTitle(title);
 
             editSpeakerName.addTextChangedListener(new TextWatcher() {
                 @Override
@@ -77,6 +86,9 @@ public class EditSpeakerModel extends BaseActivity {
 
                 @Override
                 public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    if (isRecording)
+                        stopRecord();
+
                     speakerId = charSequence.toString();
                     if (speakersCount != 0) {
                         speakerIdExist = false;
@@ -87,7 +99,7 @@ public class EditSpeakerModel extends BaseActivity {
                             }
                         }
                         if (speakerIdExist) {
-                            editSpeakerName.setError("This speaker name already exist !");
+                            editSpeakerName.setError(getResources().getString(R.string.speakerExist));
                             updateSpeaker.setEnabled(false);
                         }
                     }
@@ -96,10 +108,13 @@ public class EditSpeakerModel extends BaseActivity {
                 @Override
                 public void afterTextChanged(Editable editable) {
                     if (!speakerId.isEmpty()) {
-                        recordButton.setVisibility(View.VISIBLE);
+                        startButton.setVisibility(View.VISIBLE);
+                        timeText.setVisibility(View.VISIBLE);
                     }
                     else {
-                        recordButton.setVisibility(View.INVISIBLE);
+                        startButton.setVisibility(View.INVISIBLE);
+                        stopButton.setVisibility(View.INVISIBLE);
+                        timeText.setVisibility(View.INVISIBLE);
                     }
                     if (recordExist && !speakerIdExist) {
                         updateSpeaker.setEnabled(true);
@@ -107,52 +122,62 @@ public class EditSpeakerModel extends BaseActivity {
                 }
             });
 
-            recordButton.setRecordListener(new OnRecordListener() {
+            startButton.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onRecord() {
-                    if (!isRecording) {
-                        isRecording = true;
-                        try {
-                            mediaRecorder = new MediaRecorder();
-                            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-                            mediaRecorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB);
-                            mediaRecorder.setOutputFile(audioSavePathInDevice);
-                            mediaRecorder.prepare();
-                            mediaRecorder.start();
-                        } catch (IllegalStateException e) {
-                            System.out.println(e.getMessage());
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            System.out.println(e.getMessage());
+                public void onClick(View view) {
+                    isRecording = true;
+                    startButton.setVisibility(View.INVISIBLE);
+                    stopButton.setVisibility(View.VISIBLE);
+                    timeText.setText(R.string.default_time);
+
+                    if (checkPermission()) {
+                        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                                RECORDER_SAMPLERATE, RECORDER_CHANNELS,
+                                RECORDER_AUDIO_ENCODING, BufferElements2Rec * BytesPerElement);
+                        recorder.startRecording();
+                    }
+                    else {
+                        requestPermission();
+                    }
+
+                    recordingThread = new Thread(new Runnable() {
+                        private Handler handler = new Handler();
+                        private long startTime = System.currentTimeMillis();
+
+                        public void run() {
+                            sData = new short[BufferElements2Rec];
+                            while (isRecording) {
+                                recorder.read(sData, 0, BufferElements2Rec);
+
+                                try {
+                                    alizeSystem.addAudio(sData);
+                                } catch (AlizeException e) {
+                                    e.printStackTrace();
+                                }
+
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        long currentTime = System.currentTimeMillis() - startTime;
+                                        String result =
+                                            new SimpleDateFormat("mm:ss:SS").format(new Date(currentTime));
+
+                                        timeText.setText(result);
+                                    }
+                                });
+                            }
                         }
-                    }
+                    }, "AudioRecorder Thread");
+
+                    recordingThread.start();
                 }
+            });
 
+            stopButton.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onRecordCancel() {
-                    mediaRecorder.stop();
-                    isRecording = false;
-                }
-
-                @Override
-                public void onRecordFinish() {
-                    mediaRecorder.stop();
-                    recordExist = true;
-                    isRecording = false;
-                    if (!speakerId.equals("NoName") && !speakerIdExist) {
-                        updateSpeaker.setEnabled(true);
-                    }
-                    try {
-                        alizeSystem.addAudio(audioSavePathInDevice);
-                        // TODO delete le file
-                    } catch (AlizeException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    makeToast("Recording Completed");
+                public void onClick(View view) {
+                    stopRecord();
+                    startButton.setVisibility(View.VISIBLE);
                 }
             });
 
@@ -160,13 +185,19 @@ public class EditSpeakerModel extends BaseActivity {
                 @Override
                 public void onClick(View view) {
                     try {
-                        if (newSpeaker)
+                        if (newSpeaker) {
                             alizeSystem.createSpeakerModel(speakerId);
-                        else if (!originalSpeakerId.equals(speakerId)) {
-                            //TODO modify speaker name in alize system
+                            alizeSystem.saveSpeakerModel(speakerId,
+                                    Environment.getExternalStorageDirectory().getAbsolutePath() + "/save.pcm");
                         }
-                        else
+                        else if (!originalSpeakerId.equals(speakerId)) {
+                            //TODO modify speaker name in alize system -> updateSpeakerId(originalSpeakerId, speakerId)
+                            if (recordExist)
+                                alizeSystem.adaptSpeakerModel(speakerId);
+                        }
+                        else {
                             alizeSystem.adaptSpeakerModel(speakerId);
+                        }
 
                         alizeSystem.resetAudio();
                         alizeSystem.resetFeatures();
@@ -183,4 +214,47 @@ public class EditSpeakerModel extends BaseActivity {
             e.printStackTrace();
         }
     }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            finish();
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    private void stopRecord() {
+        if (recorder != null) {
+            isRecording = false;
+            stopButton.setVisibility(View.INVISIBLE);
+            recorder.stop();
+            recorder.release();
+            recorder = null;
+            recordingThread = null;
+            recordExist = true;
+
+            if (!speakerId.equals("NoName") && !speakerIdExist) {
+                updateSpeaker.setEnabled(true);
+            }
+            try {
+                alizeSystem.addAudio(sData);
+            } catch (AlizeException e) {
+                e.printStackTrace();
+            }
+
+            makeToast("Recording Completed");
+        }
+    }
+
+    /* TODO can be usefull
+    private byte[] short2byte(short[] sData) {
+        int shortArrsize = sData.length;
+        byte[] bytes = new byte[shortArrsize * 2];
+        for (int i = 0; i < shortArrsize; i++) {
+            bytes[i * 2] = (byte) (sData[i] & 0x00FF);
+            bytes[(i * 2) + 1] = (byte) (sData[i] >> 8);
+            sData[i] = 0;
+        }
+        return bytes;
+    }*/
 }

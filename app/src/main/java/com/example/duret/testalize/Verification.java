@@ -5,6 +5,7 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.widget.TextView;
 
 import com.emrekose.recordbutton.OnRecordListener;
@@ -16,16 +17,16 @@ import AlizeSpkRec.AlizeException;
 import AlizeSpkRec.SimpleSpkDetSystem;
 
 public class Verification extends BaseActivity{
-    final int ERROR_COLOR = Color.RED;
-    final int SUCCESS_COLOR = Color.GREEN;
-    SimpleSpkDetSystem alizeSystem;
-    String speakerId = "";
-    TextView resultText;
-    RecordButton recordButton;
-    MediaRecorder mediaRecorder;
-    String audioSavePathInDevice = null;
-    boolean identify = false;
-    boolean isRecording = false;
+    private final int ERROR_COLOR = Color.RED;
+    private final int SUCCESS_COLOR = Color.rgb(0,150,0);
+    private SimpleSpkDetSystem alizeSystem;
+    private String speakerId = "";
+    private TextView resultText;
+    private RecordButton recordButton;
+    private MediaRecorder mediaRecorder;
+    private String audioSavePathInDevice = null;
+    private boolean identify = false;
+    private boolean isRecording = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -33,7 +34,7 @@ public class Verification extends BaseActivity{
             super.onCreate(savedInstanceState);
             setContentView(R.layout.verification);
 
-            alizeSystem = (SimpleSpkDetSystem) getIntent().getSerializableExtra("alizeSystem");
+            alizeSystem = SharedAlize.getInstance(getApplicationContext());
             speakerId = getIntent().getStringExtra("speakerId");
             recordButton = findViewById(R.id.recordBtn);
             resultText = findViewById(R.id.result_text);
@@ -106,15 +107,22 @@ public class Verification extends BaseActivity{
         }
     }
 
-    public void makeResult() throws AlizeException {
-        String result = "";
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            finish();
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    private void makeResult() throws AlizeException {
+        String result;
         if (identify) {
-            Log.e("", "makeResult: identify");
-            //essaye de trouver le speaker avec le record
+            //Try to match a speaker with the record
 
             SimpleSpkDetSystem.SpkRecResult identificationResult = alizeSystem.identifySpeaker();
             if (identificationResult.match) {
-                result = "Match speaker : " + identificationResult.speakerId;
+                result = "Match: " + identificationResult.speakerId;
                 resultText.setTextColor(SUCCESS_COLOR);
             }
             else {
@@ -123,8 +131,7 @@ public class Verification extends BaseActivity{
             }
         }
         else {
-            Log.e("", "makeResult: verify");
-            //compare le record avec le model de l'user
+            //compare the record with the speaker model
 
             SimpleSpkDetSystem.SpkRecResult verificationResult = alizeSystem.verifySpeaker(speakerId);
 
