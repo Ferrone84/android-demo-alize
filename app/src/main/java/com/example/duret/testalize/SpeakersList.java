@@ -107,8 +107,6 @@ public class SpeakersList extends BaseActivity{
     }
 
     public void addSpeaker(View v) {
-        //adapter.insert(new Speaker(""), adapter.getCount());
-        //updateListViewContent();
         changeActivity(EditSpeakerModel.class, "");
     }
 
@@ -118,11 +116,11 @@ public class SpeakersList extends BaseActivity{
 
     public void removeAll(View v) throws AlizeException {
         //TODO trouver pourquoi removeAllSpeakers() plante l'appli
-        /*try {
+        try {
             alizeSystem.removeAllSpeakers();
         } catch (AlizeException e) {
             e.printStackTrace();
-        }*/
+        }
         adapter.clear();
         refreshSpeakersList();
         updateListViewContent();

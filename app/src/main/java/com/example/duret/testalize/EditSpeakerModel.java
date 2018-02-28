@@ -17,6 +17,7 @@ import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import AlizeSpkRec.AlizeException;
 import AlizeSpkRec.IdAlreadyExistsException;
@@ -43,7 +44,7 @@ public class EditSpeakerModel extends BaseActivity {
     private boolean newSpeaker = false;
     private boolean isRecording = false;
     private boolean recordExist = false;
-    private boolean speakerIdExist = false;
+    private boolean speakerIdAlreadyExist = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -91,14 +92,14 @@ public class EditSpeakerModel extends BaseActivity {
 
                     speakerId = charSequence.toString();
                     if (speakersCount != 0) {
-                        speakerIdExist = false;
+                        speakerIdAlreadyExist = false;
                         for (String spkId : speakers) {
                             if (spkId.equals(speakerId) && !speakerId.equals(originalSpeakerId)) {
-                                speakerIdExist = true;
+                                speakerIdAlreadyExist = true;
                                 break;
                             }
                         }
-                        if (speakerIdExist) {
+                        if (speakerIdAlreadyExist) {
                             editSpeakerName.setError(getResources().getString(R.string.speakerExist));
                             updateSpeaker.setEnabled(false);
                         }
@@ -116,7 +117,7 @@ public class EditSpeakerModel extends BaseActivity {
                         stopButton.setVisibility(View.INVISIBLE);
                         timeText.setVisibility(View.INVISIBLE);
                     }
-                    if (recordExist && !speakerIdExist) {
+                    if (recordExist && !speakerIdAlreadyExist) {
                         updateSpeaker.setEnabled(true);
                     }
                 }
@@ -129,6 +130,16 @@ public class EditSpeakerModel extends BaseActivity {
                     startButton.setVisibility(View.INVISIBLE);
                     stopButton.setVisibility(View.VISIBLE);
                     timeText.setText(R.string.default_time);
+
+                    if (recordExist) {
+                        try {
+                            alizeSystem.resetAudio();
+                            alizeSystem.resetFeatures();
+                        } catch (AlizeException e) {
+                            e.printStackTrace();
+                        }
+                        recordExist = false;
+                    }
 
                     if (checkPermission()) {
                         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
@@ -145,7 +156,7 @@ public class EditSpeakerModel extends BaseActivity {
                         private long startTime = System.currentTimeMillis();
 
                         public void run() {
-                            sData = new short[BufferElements2Rec];
+                            sData = new short[BufferElements2Rec]; //TODO discuter de la taille avec Teva
                             while (isRecording) {
                                 recorder.read(sData, 0, BufferElements2Rec);
 
@@ -160,7 +171,7 @@ public class EditSpeakerModel extends BaseActivity {
                                     public void run() {
                                         long currentTime = System.currentTimeMillis() - startTime;
                                         String result =
-                                            new SimpleDateFormat("mm:ss:SS").format(new Date(currentTime));
+                                            new SimpleDateFormat("mm:ss:SS", Locale.ENGLISH).format(new Date(currentTime));
 
                                         timeText.setText(result);
                                     }
@@ -233,7 +244,7 @@ public class EditSpeakerModel extends BaseActivity {
             recordingThread = null;
             recordExist = true;
 
-            if (!speakerId.equals("NoName") && !speakerIdExist) {
+            if (!speakerId.equals("NoName") && !speakerIdAlreadyExist) {
                 updateSpeaker.setEnabled(true);
             }
             try {

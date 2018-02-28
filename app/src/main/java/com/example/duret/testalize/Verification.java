@@ -1,32 +1,45 @@
 package com.example.duret.testalize;
 
 import android.graphics.Color;
+import android.media.AudioFormat;
+import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
-import android.util.Log;
+import android.os.Handler;
 import android.view.KeyEvent;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
-import com.emrekose.recordbutton.OnRecordListener;
-import com.emrekose.recordbutton.RecordButton;
-
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import AlizeSpkRec.AlizeException;
 import AlizeSpkRec.SimpleSpkDetSystem;
 
 public class Verification extends BaseActivity{
+    private static final int RECORDER_SAMPLERATE = 8000;
+    private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
+    private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+    private int BufferElements2Rec = 1024; // want to play 2048 (2K) since 2 bytes we use only 1024
+    private int BytesPerElement = 2; // 2 bytes in 16bit format
+
+    private AudioRecord recorder = null;
+    private Thread recordingThread = null;
+    private short sData[];
     private final int ERROR_COLOR = Color.RED;
     private final int SUCCESS_COLOR = Color.rgb(0,150,0);
     private SimpleSpkDetSystem alizeSystem;
     private String speakerId = "";
-    private TextView resultText;
-    private RecordButton recordButton;
+    private TextView resultText, timeText;
+    private Button stopButton, startButton;
     private MediaRecorder mediaRecorder;
     private String audioSavePathInDevice = null;
     private boolean identify = false;
     private boolean isRecording = false;
+    private boolean recordExist = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -36,10 +49,10 @@ public class Verification extends BaseActivity{
 
             alizeSystem = SharedAlize.getInstance(getApplicationContext());
             speakerId = getIntent().getStringExtra("speakerId");
-            recordButton = findViewById(R.id.recordBtn);
             resultText = findViewById(R.id.result_text);
-
-            recordButton.setMaxMilisecond(3000);// TODO enlever ça
+            startButton = findViewById(R.id.startBtn);
+            stopButton = findViewById(R.id.stopBtn);
+            timeText = findViewById(R.id.timeText);
 
             String title = "Verify '" + speakerId + "' Model";
             if (speakerId.isEmpty()) {
@@ -48,57 +61,90 @@ public class Verification extends BaseActivity{
             }
             setTitle(title);
 
-            if (checkPermission()) {
-                audioSavePathInDevice =
-                        Environment.getExternalStorageDirectory().getAbsolutePath() + "/tmp.3gp";
-            }
-            else {
-                requestPermission();
-            }
-
-            recordButton.setRecordListener(new OnRecordListener() {
+            startButton.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onRecord() {
-                    if (!isRecording) {
-                        isRecording = true;
+                public void onClick(View view) {
+                    isRecording = true;
+                    startButton.setVisibility(View.INVISIBLE);
+                    stopButton.setVisibility(View.VISIBLE);
+                    timeText.setText(R.string.default_time);
+                    resultText.setText("");
+
+                    if (recordExist) {
                         try {
-                            mediaRecorder = new MediaRecorder();
-                            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-                            mediaRecorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB);
-                            mediaRecorder.setOutputFile(audioSavePathInDevice);
-                            mediaRecorder.prepare();
-                            mediaRecorder.start();
-                        } catch (IllegalStateException e) {
-                            System.out.println(e.getMessage());
+                            alizeSystem.resetAudio();
+                            alizeSystem.resetFeatures();
+                        } catch (AlizeException e) {
                             e.printStackTrace();
-                        } catch (IOException e) {
-                            System.out.println(e.getMessage());
                         }
-                    }
-                }
-
-                @Override
-                public void onRecordCancel() {
-                    mediaRecorder.stop();
-                    isRecording = false;
-                }
-
-                @Override
-                public void onRecordFinish() {
-                    mediaRecorder.stop();
-                    isRecording = false;
-                    try {
-                        alizeSystem.addAudio(audioSavePathInDevice);
-                        // TODO delete le file
-                        makeResult();
-                    } catch (AlizeException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                        recordExist = false;
                     }
 
-                    makeToast("Recording Completed");
+                    if (checkPermission()) {
+                        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                                RECORDER_SAMPLERATE, RECORDER_CHANNELS,
+                                RECORDER_AUDIO_ENCODING, BufferElements2Rec * BytesPerElement);
+                        recorder.startRecording();
+                    }
+                    else {
+                        requestPermission();
+                    }
+
+                    recordingThread = new Thread(new Runnable() {
+                        private Handler handler = new Handler();
+                        private long startTime = System.currentTimeMillis();
+
+                        public void run() {
+                            sData = new short[BufferElements2Rec]; //TODO discuter de la taille avec Teva
+                            while (isRecording) {
+                                recorder.read(sData, 0, BufferElements2Rec);
+
+                                try {
+                                    alizeSystem.addAudio(sData);
+                                } catch (AlizeException e) {
+                                    e.printStackTrace();
+                                }
+
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        long currentTime = System.currentTimeMillis() - startTime;
+                                        String result =
+                                                new SimpleDateFormat("mm:ss:SS", Locale.ENGLISH).format(new Date(currentTime));
+
+                                        timeText.setText(result);
+                                    }
+                                });
+                            }
+                        }
+                    }, "AudioRecorder Thread");
+
+                    recordingThread.start();
+                }
+            });
+
+            stopButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    startButton.setVisibility(View.VISIBLE);
+                    if (recorder != null) {
+                        isRecording = false;
+                        stopButton.setVisibility(View.INVISIBLE);
+                        recorder.stop();
+                        recorder.release();
+                        recorder = null;
+                        recordingThread = null;
+                        recordExist = true;
+
+                        try {
+                            alizeSystem.addAudio(sData);
+                            makeResult();
+                        } catch (AlizeException e) {
+                            e.printStackTrace();
+                        }
+
+                        makeToast("Recording Completed");
+                    }
                 }
             });
         }
@@ -122,7 +168,7 @@ public class Verification extends BaseActivity{
 
             SimpleSpkDetSystem.SpkRecResult identificationResult = alizeSystem.identifySpeaker();
             if (identificationResult.match) {
-                result = "Match: " + identificationResult.speakerId;
+                result = "Match:\n" + identificationResult.speakerId;
                 resultText.setTextColor(SUCCESS_COLOR);
             }
             else {

@@ -41,7 +41,7 @@
     <string name="update_speaker_button">Update Speaker</string>
     <string name="update_speaker_model">Update speaker model</string>
     <string name="identify">Identify</string>
-    <string name="remove_all">Remove All</string>
+    <string name="remove_all">Remove All Speakers</string>
     <string name="default_time">00:00:00</string>
     <string name="speakerExist">This speaker name already exists!</string>
 </resources>
