@@ -168,7 +168,7 @@ public class Verification extends BaseActivity{
 
             SimpleSpkDetSystem.SpkRecResult identificationResult = alizeSystem.identifySpeaker();
             if (identificationResult.match) {
-                result = "Match:\n" + identificationResult.speakerId;
+                result = "Match:\n" + identificationResult.speakerId + "\nScore:\n" + identificationResult.score;
                 resultText.setTextColor(SUCCESS_COLOR);
             }
             else {
@@ -182,7 +182,7 @@ public class Verification extends BaseActivity{
             SimpleSpkDetSystem.SpkRecResult verificationResult = alizeSystem.verifySpeaker(speakerId);
 
             if (verificationResult.match) {
-                result = "Match";
+                result = "Match\nScore:\n" + verificationResult.score;
                 resultText.setTextColor(SUCCESS_COLOR);
             }
             else {

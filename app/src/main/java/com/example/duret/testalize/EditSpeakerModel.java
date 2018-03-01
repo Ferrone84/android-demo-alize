@@ -4,7 +4,6 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -17,6 +16,7 @@ import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -31,11 +31,11 @@ public class EditSpeakerModel extends BaseActivity {
     private static final int RECORDER_SAMPLERATE = 8000;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    private int bufferElements2Rec = 1024; // want to play 2048 (2K) since 2 bytes we use only 1024
+    private int bufferElements2Rec = 2000;
     private int bytesPerElement = 2; // 2 bytes in 16bit format
 
     private AudioRecord recorder = null;
-    private Thread recordingThread = null;
+    private Thread recordingThread = null, addSamplesThread = null;
     private short audioSamples[];
     private Button updateSpeaker, stopButton, startButton;
     private TextView timeText;
@@ -45,8 +45,7 @@ public class EditSpeakerModel extends BaseActivity {
     private int speakersCount;
     private String speakerId = "";
     private boolean newSpeaker = false;
-    private boolean isRecording = false;
-    private boolean recordExist = false;
+    private boolean recordExists = false;
     private boolean speakerIdAlreadyExists = false;
 
     @Override
@@ -69,9 +68,9 @@ public class EditSpeakerModel extends BaseActivity {
             final String originalSpeakerId = speakerId;
 
             if (speakerId.isEmpty()) {
-                speakerId = "NoName";
                 newSpeaker =  true;
                 startButton.setVisibility(View.INVISIBLE);
+                timeText.setVisibility(View.INVISIBLE);
             }
             else {
                 editSpeakerName.setText(speakerId);
@@ -90,9 +89,6 @@ public class EditSpeakerModel extends BaseActivity {
 
                 @Override
                 public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                    if (isRecording)
-                        stopRecording();
-
                     speakerId = charSequence.toString();
                     if (speakersCount != 0) {
                         speakerIdAlreadyExists = false;
@@ -119,8 +115,9 @@ public class EditSpeakerModel extends BaseActivity {
                         startButton.setVisibility(View.INVISIBLE);
                         stopButton.setVisibility(View.INVISIBLE);
                         timeText.setVisibility(View.INVISIBLE);
+                        updateSpeaker.setEnabled(false);
                     }
-                    if (recordExist && !speakerIdAlreadyExists) {
+                    if (recordExists && !speakerIdAlreadyExists) {
                         updateSpeaker.setEnabled(true);
                     }
                 }
@@ -147,12 +144,10 @@ public class EditSpeakerModel extends BaseActivity {
                     try {
                         if (newSpeaker) {
                             alizeSystem.createSpeakerModel(speakerId);
-                            alizeSystem.saveSpeakerModel(speakerId,
-                                    Environment.getExternalStorageDirectory().getAbsolutePath() + "/save.pcm");
                         }
                         else if (!originalSpeakerId.equals(speakerId)) {
                             //TODO modify speaker name in alize system -> updateSpeakerId(originalSpeakerId, speakerId)
-                            if (recordExist)
+                            if (recordExists)
                                 alizeSystem.adaptSpeakerModel(speakerId);
                         }
                         else {
@@ -184,30 +179,32 @@ public class EditSpeakerModel extends BaseActivity {
     }
 
     private void startRecording() {
-        isRecording = true;
         startButton.setVisibility(View.INVISIBLE);
         stopButton.setVisibility(View.VISIBLE);
+        updateSpeaker.setEnabled(false);
         timeText.setText(R.string.default_time);
 
-        if (recordExist) {
+        if (recordExists) {
             try {
                 alizeSystem.resetAudio();
                 alizeSystem.resetFeatures();
             } catch (AlizeException e) {
                 e.printStackTrace();
             }
-            recordExist = false;
+            recordExists = false;
         }
 
         if (checkPermission()) {
             recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                     RECORDER_SAMPLERATE, RECORDER_CHANNELS,
-                    RECORDER_AUDIO_ENCODING, bufferElements2Rec * bytesPerElement /2);
+                    RECORDER_AUDIO_ENCODING, bufferElements2Rec * bytesPerElement);
             recorder.startRecording();
         }
         else {
             requestPermission();
         }
+
+        final List<short[]> audioPackets = Collections.synchronizedList(new ArrayList<short[]>());
 
         recordingThread = new Thread(new Runnable() {
             private Handler handler = new Handler();
@@ -215,36 +212,22 @@ public class EditSpeakerModel extends BaseActivity {
 
             public void run() {
                 short[] tmpAudioSamples = new short[bufferElements2Rec];
-                while (isRecording) {
+                while (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
                     int samplesRead = recorder.read(tmpAudioSamples, 0, bufferElements2Rec);
-                    short[] samples = new short[samplesRead];
-                    System.arraycopy(tmpAudioSamples, 0, samples, 0, samplesRead);
+                    Log.e("", "length read: " + samplesRead);
+                    if (samplesRead > 0) {
+                        short[] samples = new short[samplesRead];
+                        System.arraycopy(tmpAudioSamples, 0, samples, 0, samplesRead);
 
-                    Log.e("", "run: "+samplesRead);
-
-                    //List list = Collections.synchronizedList(new ArrayList<short[]>());
-                    //list.add(samples);
-                    Log.e("lul", "lel ");
+                        synchronized (audioPackets) {
+                            audioPackets.add(samples);
+                            Log.e("", "length read: " + samplesRead + " / packets: " + audioPackets.size());
+                        }
+                    }
 
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
-                            /*
-                                while (isRecording) {
-                                    synchronized (list) {
-                                      Iterator i = list.iterator(); // Must be in synchronized block
-                                      if (i.hasNext())
-                                        addAudio()
-                                    }
-                                }
-
-                                while (il reste des éléments) {
-                                    on les addAudio
-                                }
-
-                                on enable le bouton pour le add/update speaker
-
-                             */
                             long currentTime = System.currentTimeMillis() - startTime;
                             String result = new SimpleDateFormat("mm:ss:SS", Locale.ENGLISH)
                                     .format(new Date(currentTime));
@@ -253,44 +236,79 @@ public class EditSpeakerModel extends BaseActivity {
                         }
                     });
                 }
+                Log.e("endThread1", "arrsize: "+audioPackets.size());
             }
         }, "AudioRecorder Thread");
 
+        addSamplesThread = new Thread(new Runnable() {
+            private Handler handler = new Handler();
+            @Override
+            public void run() {
+                short[] nextElement = null;
+                while((recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING)
+                        || (!audioPackets.isEmpty())) {
+                    nextElement = null;
+                    synchronized (audioPackets) {
+                        if (!audioPackets.isEmpty()) {
+                            nextElement = audioPackets.get(0);
+                            audioPackets.remove(0);
+                            Log.e(String.valueOf(nextElement.length), "hasnext: " + Arrays.toString(nextElement));
+                        }
+                    }
+                    if (nextElement != null) {
+                        try {
+                            alizeSystem.addAudio(nextElement);
+                        } catch (AlizeException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                try {
+                    recordingThread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                while (!audioPackets.isEmpty()) {
+                    nextElement = audioPackets.get(0);
+                    audioPackets.remove(0);
+                    Log.e(String.valueOf(nextElement.length), "hasnext: " + Arrays.toString(nextElement));
+                }
+
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!speakerId.isEmpty() && !speakerIdAlreadyExists) {
+                            updateSpeaker.setEnabled(true);
+                        }
+                    }
+                });
+                Log.e("endThread2", "arrsize: "+audioPackets.size());
+            }
+        }, "addSamples Thread");
+
         recordingThread.start();
+        addSamplesThread.start();
     }
 
     private void stopRecording() {
-        isRecording = false;
         stopButton.setVisibility(View.INVISIBLE);
+
         if (recorder != null) {
             recorder.stop();
+            try {
+                recordingThread.join();
+                addSamplesThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             recorder.release();
             recorder = null;
             recordingThread = null;
-            recordExist = true;
-
-            if (!speakerId.equals("NoName") && !speakerIdAlreadyExists) {
-                updateSpeaker.setEnabled(true); //TODO kick ça et attendre que le thread du record le fasse
-            }
-            /*try {
-                alizeSystem.addAudio(audioSamples);
-            } catch (AlizeException e) {
-                e.printStackTrace();
-            }*/
+            addSamplesThread = null;
+            recordExists = true;
 
             makeToast("Recording Completed");
         }
     }
-
-    /* TODO can be usefull
-    private byte[] short2byte(short[] audioSamples) {
-        int shortArrsize = audioSamples.length;
-        byte[] bytes = new byte[shortArrsize * 2];
-        for (int i = 0; i < shortArrsize; i++) {
-            bytes[i * 2] = (byte) (audioSamples[i] & 0x00FF);
-            bytes[(i * 2) + 1] = (byte) (audioSamples[i] >> 8);
-            audioSamples[i] = 0;
-        }
-        return bytes;
-    }*/
 }

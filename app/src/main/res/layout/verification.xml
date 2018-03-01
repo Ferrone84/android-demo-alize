@@ -40,6 +40,6 @@
         android:layout_height="match_parent"
         android:layout_below="@+id/timeText"
         android:gravity="center"
-        android:textSize="60sp"/>
+        android:textSize="40sp"/>
 
 </RelativeLayout>

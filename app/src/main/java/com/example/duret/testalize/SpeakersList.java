@@ -128,10 +128,14 @@ public class SpeakersList extends BaseActivity{
 
     @Override
     public void onResume() {
-        super.onResume();
-        refreshSpeakersList();
-        clearAndFill();
-        updateListViewContent();
+        try {
+            super.onResume();
+            refreshSpeakersList();
+            clearAndFill();
+            updateListViewContent();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     private void refreshSpeakersList() {
