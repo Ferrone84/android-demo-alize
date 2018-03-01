@@ -16,7 +16,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import AlizeSpkRec.AlizeException;
@@ -28,12 +31,12 @@ public class EditSpeakerModel extends BaseActivity {
     private static final int RECORDER_SAMPLERATE = 8000;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    private int BufferElements2Rec = 1024; // want to play 2048 (2K) since 2 bytes we use only 1024
-    private int BytesPerElement = 2; // 2 bytes in 16bit format
+    private int bufferElements2Rec = 1024; // want to play 2048 (2K) since 2 bytes we use only 1024
+    private int bytesPerElement = 2; // 2 bytes in 16bit format
 
     private AudioRecord recorder = null;
     private Thread recordingThread = null;
-    private short sData[];
+    private short audioSamples[];
     private Button updateSpeaker, stopButton, startButton;
     private TextView timeText;
     private EditText editSpeakerName;
@@ -44,7 +47,7 @@ public class EditSpeakerModel extends BaseActivity {
     private boolean newSpeaker = false;
     private boolean isRecording = false;
     private boolean recordExist = false;
-    private boolean speakerIdAlreadyExist = false;
+    private boolean speakerIdAlreadyExists = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -88,18 +91,18 @@ public class EditSpeakerModel extends BaseActivity {
                 @Override
                 public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                     if (isRecording)
-                        stopRecord();
+                        stopRecording();
 
                     speakerId = charSequence.toString();
                     if (speakersCount != 0) {
-                        speakerIdAlreadyExist = false;
+                        speakerIdAlreadyExists = false;
                         for (String spkId : speakers) {
                             if (spkId.equals(speakerId) && !speakerId.equals(originalSpeakerId)) {
-                                speakerIdAlreadyExist = true;
+                                speakerIdAlreadyExists = true;
                                 break;
                             }
                         }
-                        if (speakerIdAlreadyExist) {
+                        if (speakerIdAlreadyExists) {
                             editSpeakerName.setError(getResources().getString(R.string.speakerExist));
                             updateSpeaker.setEnabled(false);
                         }
@@ -117,7 +120,7 @@ public class EditSpeakerModel extends BaseActivity {
                         stopButton.setVisibility(View.INVISIBLE);
                         timeText.setVisibility(View.INVISIBLE);
                     }
-                    if (recordExist && !speakerIdAlreadyExist) {
+                    if (recordExist && !speakerIdAlreadyExists) {
                         updateSpeaker.setEnabled(true);
                     }
                 }
@@ -126,68 +129,14 @@ public class EditSpeakerModel extends BaseActivity {
             startButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    isRecording = true;
-                    startButton.setVisibility(View.INVISIBLE);
-                    stopButton.setVisibility(View.VISIBLE);
-                    timeText.setText(R.string.default_time);
-
-                    if (recordExist) {
-                        try {
-                            alizeSystem.resetAudio();
-                            alizeSystem.resetFeatures();
-                        } catch (AlizeException e) {
-                            e.printStackTrace();
-                        }
-                        recordExist = false;
-                    }
-
-                    if (checkPermission()) {
-                        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                                RECORDER_SAMPLERATE, RECORDER_CHANNELS,
-                                RECORDER_AUDIO_ENCODING, BufferElements2Rec * BytesPerElement);
-                        recorder.startRecording();
-                    }
-                    else {
-                        requestPermission();
-                    }
-
-                    recordingThread = new Thread(new Runnable() {
-                        private Handler handler = new Handler();
-                        private long startTime = System.currentTimeMillis();
-
-                        public void run() {
-                            sData = new short[BufferElements2Rec]; //TODO discuter de la taille avec Teva
-                            while (isRecording) {
-                                recorder.read(sData, 0, BufferElements2Rec);
-
-                                try {
-                                    alizeSystem.addAudio(sData);
-                                } catch (AlizeException e) {
-                                    e.printStackTrace();
-                                }
-
-                                handler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        long currentTime = System.currentTimeMillis() - startTime;
-                                        String result =
-                                            new SimpleDateFormat("mm:ss:SS", Locale.ENGLISH).format(new Date(currentTime));
-
-                                        timeText.setText(result);
-                                    }
-                                });
-                            }
-                        }
-                    }, "AudioRecorder Thread");
-
-                    recordingThread.start();
+                    startRecording();
                 }
             });
 
             stopButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    stopRecord();
+                    stopRecording();
                     startButton.setVisibility(View.VISIBLE);
                 }
             });
@@ -234,37 +183,113 @@ public class EditSpeakerModel extends BaseActivity {
         return super.onKeyDown(keyCode, event);
     }
 
-    private void stopRecord() {
+    private void startRecording() {
+        isRecording = true;
+        startButton.setVisibility(View.INVISIBLE);
+        stopButton.setVisibility(View.VISIBLE);
+        timeText.setText(R.string.default_time);
+
+        if (recordExist) {
+            try {
+                alizeSystem.resetAudio();
+                alizeSystem.resetFeatures();
+            } catch (AlizeException e) {
+                e.printStackTrace();
+            }
+            recordExist = false;
+        }
+
+        if (checkPermission()) {
+            recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                    RECORDER_SAMPLERATE, RECORDER_CHANNELS,
+                    RECORDER_AUDIO_ENCODING, bufferElements2Rec * bytesPerElement /2);
+            recorder.startRecording();
+        }
+        else {
+            requestPermission();
+        }
+
+        recordingThread = new Thread(new Runnable() {
+            private Handler handler = new Handler();
+            private long startTime = System.currentTimeMillis();
+
+            public void run() {
+                short[] tmpAudioSamples = new short[bufferElements2Rec];
+                while (isRecording) {
+                    int samplesRead = recorder.read(tmpAudioSamples, 0, bufferElements2Rec);
+                    short[] samples = new short[samplesRead];
+                    System.arraycopy(tmpAudioSamples, 0, samples, 0, samplesRead);
+
+                    Log.e("", "run: "+samplesRead);
+
+                    //List list = Collections.synchronizedList(new ArrayList<short[]>());
+                    //list.add(samples);
+                    Log.e("lul", "lel ");
+
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            /*
+                                while (isRecording) {
+                                    synchronized (list) {
+                                      Iterator i = list.iterator(); // Must be in synchronized block
+                                      if (i.hasNext())
+                                        addAudio()
+                                    }
+                                }
+
+                                while (il reste des éléments) {
+                                    on les addAudio
+                                }
+
+                                on enable le bouton pour le add/update speaker
+
+                             */
+                            long currentTime = System.currentTimeMillis() - startTime;
+                            String result = new SimpleDateFormat("mm:ss:SS", Locale.ENGLISH)
+                                    .format(new Date(currentTime));
+
+                            timeText.setText(result);
+                        }
+                    });
+                }
+            }
+        }, "AudioRecorder Thread");
+
+        recordingThread.start();
+    }
+
+    private void stopRecording() {
+        isRecording = false;
+        stopButton.setVisibility(View.INVISIBLE);
         if (recorder != null) {
-            isRecording = false;
-            stopButton.setVisibility(View.INVISIBLE);
             recorder.stop();
             recorder.release();
             recorder = null;
             recordingThread = null;
             recordExist = true;
 
-            if (!speakerId.equals("NoName") && !speakerIdAlreadyExist) {
-                updateSpeaker.setEnabled(true);
+            if (!speakerId.equals("NoName") && !speakerIdAlreadyExists) {
+                updateSpeaker.setEnabled(true); //TODO kick ça et attendre que le thread du record le fasse
             }
-            try {
-                alizeSystem.addAudio(sData);
+            /*try {
+                alizeSystem.addAudio(audioSamples);
             } catch (AlizeException e) {
                 e.printStackTrace();
-            }
+            }*/
 
             makeToast("Recording Completed");
         }
     }
 
     /* TODO can be usefull
-    private byte[] short2byte(short[] sData) {
-        int shortArrsize = sData.length;
+    private byte[] short2byte(short[] audioSamples) {
+        int shortArrsize = audioSamples.length;
         byte[] bytes = new byte[shortArrsize * 2];
         for (int i = 0; i < shortArrsize; i++) {
-            bytes[i * 2] = (byte) (sData[i] & 0x00FF);
-            bytes[(i * 2) + 1] = (byte) (sData[i] >> 8);
-            sData[i] = 0;
+            bytes[i * 2] = (byte) (audioSamples[i] & 0x00FF);
+            bytes[(i * 2) + 1] = (byte) (audioSamples[i] >> 8);
+            audioSamples[i] = 0;
         }
         return bytes;
     }*/
