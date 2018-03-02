@@ -81,7 +81,7 @@ public class SpeakersList extends BaseActivity{
     }
 
     public void removeAll(View v) {
-        //TODO trouver pourquoi removeAllSpeakers() plante l'appli
+        //TODO find why removeAllSpeakers() doesn't works
         try {
             alizeSystem.removeAllSpeakers();
             adapter.clear();
