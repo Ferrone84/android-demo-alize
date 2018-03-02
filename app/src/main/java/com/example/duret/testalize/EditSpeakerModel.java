@@ -36,7 +36,6 @@ public class EditSpeakerModel extends BaseActivity {
 
     private AudioRecord recorder = null;
     private Thread recordingThread = null, addSamplesThread = null;
-    private short audioSamples[];
     private Button updateSpeaker, stopButton, startButton;
     private TextView timeText;
     private EditText editSpeakerName;
@@ -134,7 +133,6 @@ public class EditSpeakerModel extends BaseActivity {
                 @Override
                 public void onClick(View view) {
                     stopRecording();
-                    startButton.setVisibility(View.VISIBLE);
                 }
             });
 
@@ -307,6 +305,7 @@ public class EditSpeakerModel extends BaseActivity {
             recordingThread = null;
             addSamplesThread = null;
             recordExists = true;
+            startButton.setVisibility(View.VISIBLE);
 
             makeToast("Recording Completed");
         }
