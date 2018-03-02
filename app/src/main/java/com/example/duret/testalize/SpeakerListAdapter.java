@@ -2,8 +2,6 @@ package com.example.duret.testalize;
 
 import android.app.Activity;
 import android.content.Context;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,8 +13,6 @@ import android.widget.TextView;
 import java.util.List;
 
 public class SpeakerListAdapter extends ArrayAdapter<Speaker> {
-
-    protected static final String LOG_TAG = SpeakerListAdapter.class.getSimpleName();
 
     private List<Speaker> items;
     private int layoutResourceId;
@@ -31,8 +27,8 @@ public class SpeakerListAdapter extends ArrayAdapter<Speaker> {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        View row = convertView;
-        SpeakerHolder holder = null;
+        View row;
+        SpeakerHolder holder;
 
         LayoutInflater inflater = ((Activity) context).getLayoutInflater();
         row = inflater.inflate(layoutResourceId, parent, false);
@@ -52,7 +48,6 @@ public class SpeakerListAdapter extends ArrayAdapter<Speaker> {
         holder.remove.setTag(holder.speaker);
 
         holder.name = row.findViewById(R.id.speaker_name);
-        //setNameTextChangeListener(holder);
 
         row.setTag(holder);
 
@@ -71,20 +66,4 @@ public class SpeakerListAdapter extends ArrayAdapter<Speaker> {
         Button test;
         ImageButton remove;
     }
-
-    /*private void setNameTextChangeListener(final SpeakerHolder holder) {
-        holder.name.addTextChangedListener(new TextWatcher() {
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                holder.speaker.setName(s.toString());
-            }
-
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-
-            @Override
-            public void afterTextChanged(Editable s) { }
-        });
-    }*/
 }

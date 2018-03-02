@@ -6,16 +6,13 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -40,7 +37,6 @@ public class Verification extends BaseActivity{
     private TextView resultText, timeText;
     private Button stopButton, startButton;
     private boolean identify = false;
-    private boolean recordExist = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -58,7 +54,7 @@ public class Verification extends BaseActivity{
             String title = "Verify '" + speakerId + "' Model";
             if (speakerId.isEmpty()) {
                 identify = true;
-                title = "Identify a speaker";
+                title = getResources().getString(R.string.identify_speaker);
             }
             setTitle(title);
 
@@ -122,14 +118,12 @@ public class Verification extends BaseActivity{
                 short[] tmpAudioSamples = new short[bufferElements2Rec];
                 while (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
                     int samplesRead = recorder.read(tmpAudioSamples, 0, bufferElements2Rec);
-                    Log.e("", "length read: " + samplesRead);
                     if (samplesRead > 0) {
                         short[] samples = new short[samplesRead];
                         System.arraycopy(tmpAudioSamples, 0, samples, 0, samplesRead);
 
                         synchronized (audioPackets) {
                             audioPackets.add(samples);
-                            Log.e("", "length read: " + samplesRead + " / packets: " + audioPackets.size());
                         }
                     }
 
@@ -144,7 +138,6 @@ public class Verification extends BaseActivity{
                         }
                     });
                 }
-                Log.e("endThread1", "arrsize: "+audioPackets.size());
             }
         }, "AudioRecorder Thread");
 
@@ -152,7 +145,7 @@ public class Verification extends BaseActivity{
             private Handler handler = new Handler();
             @Override
             public void run() {
-                short[] nextElement = null;
+                short[] nextElement;
                 while((recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING)
                         || (!audioPackets.isEmpty())) {
                     nextElement = null;
@@ -160,7 +153,6 @@ public class Verification extends BaseActivity{
                         if (!audioPackets.isEmpty()) {
                             nextElement = audioPackets.get(0);
                             audioPackets.remove(0);
-                            Log.e(String.valueOf(nextElement.length), "hasnext: " + Arrays.toString(nextElement));
                         }
                     }
                     if (nextElement != null) {
@@ -180,7 +172,13 @@ public class Verification extends BaseActivity{
                 while (!audioPackets.isEmpty()) {
                     nextElement = audioPackets.get(0);
                     audioPackets.remove(0);
-                    Log.e(String.valueOf(nextElement.length), "hasnext: " + Arrays.toString(nextElement));
+                    if (nextElement != null) {
+                        try {
+                            alizeSystem.addAudio(nextElement);
+                        } catch (AlizeException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
 
                 handler.post(new Runnable() {
@@ -193,7 +191,6 @@ public class Verification extends BaseActivity{
                         }
                     }
                 });
-                Log.e("endThread2", "arrsize: "+audioPackets.size());
             }
         }, "addSamples Thread");
 
@@ -218,7 +215,7 @@ public class Verification extends BaseActivity{
             addSamplesThread = null;
             startButton.setVisibility(View.VISIBLE);
 
-            makeToast("Recording Completed");
+            makeToast(getResources().getString(R.string.recording_completed));
         }
     }
 

@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
@@ -16,7 +15,6 @@ import android.widget.TextView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -77,7 +75,7 @@ public class EditSpeakerModel extends BaseActivity {
 
             String title = "Edit '" + speakerId + "' Model";
             if (newSpeaker) {
-                title = "New Speaker";
+                title = getResources().getString(R.string.new_speaker);
                 updateSpeaker.setText(R.string.new_speaker);
             }
             setTitle(title);
@@ -212,14 +210,12 @@ public class EditSpeakerModel extends BaseActivity {
                 short[] tmpAudioSamples = new short[bufferElements2Rec];
                 while (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
                     int samplesRead = recorder.read(tmpAudioSamples, 0, bufferElements2Rec);
-                    Log.e("", "length read: " + samplesRead);
                     if (samplesRead > 0) {
                         short[] samples = new short[samplesRead];
                         System.arraycopy(tmpAudioSamples, 0, samples, 0, samplesRead);
 
                         synchronized (audioPackets) {
                             audioPackets.add(samples);
-                            Log.e("", "length read: " + samplesRead + " / packets: " + audioPackets.size());
                         }
                     }
 
@@ -234,7 +230,6 @@ public class EditSpeakerModel extends BaseActivity {
                         }
                     });
                 }
-                Log.e("endThread1", "arrsize: "+audioPackets.size());
             }
         }, "AudioRecorder Thread");
 
@@ -242,7 +237,7 @@ public class EditSpeakerModel extends BaseActivity {
             private Handler handler = new Handler();
             @Override
             public void run() {
-                short[] nextElement = null;
+                short[] nextElement;
                 while((recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING)
                         || (!audioPackets.isEmpty())) {
                     nextElement = null;
@@ -250,7 +245,6 @@ public class EditSpeakerModel extends BaseActivity {
                         if (!audioPackets.isEmpty()) {
                             nextElement = audioPackets.get(0);
                             audioPackets.remove(0);
-                            Log.e(String.valueOf(nextElement.length), "hasnext: " + Arrays.toString(nextElement));
                         }
                     }
                     if (nextElement != null) {
@@ -270,7 +264,13 @@ public class EditSpeakerModel extends BaseActivity {
                 while (!audioPackets.isEmpty()) {
                     nextElement = audioPackets.get(0);
                     audioPackets.remove(0);
-                    Log.e(String.valueOf(nextElement.length), "hasnext: " + Arrays.toString(nextElement));
+                    if (nextElement != null) {
+                        try {
+                            alizeSystem.addAudio(nextElement);
+                        } catch (AlizeException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
 
                 handler.post(new Runnable() {
@@ -281,7 +281,6 @@ public class EditSpeakerModel extends BaseActivity {
                         }
                     }
                 });
-                Log.e("endThread2", "arrsize: "+audioPackets.size());
             }
         }, "addSamples Thread");
 
@@ -307,7 +306,7 @@ public class EditSpeakerModel extends BaseActivity {
             recordExists = true;
             startButton.setVisibility(View.VISIBLE);
 
-            makeToast("Recording Completed");
+            makeToast(getResources().getString(R.string.recording_completed));
         }
     }
 }

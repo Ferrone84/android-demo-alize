@@ -12,7 +12,7 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:textAlignment="center"
-        android:hint="Speaker name"
+        android:hint="@string/speaker_name"
         android:maxLength="15"
         android:textColor="@color/black" />
 
