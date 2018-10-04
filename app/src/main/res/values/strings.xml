@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ALIZE</string>
+    <string name="app_name">ALIZE-Android</string>
     <string name="speakers_list">Speakers list</string>
     <string name="verification">Verification</string>
     <string name="no_speakers">There are no speakers in the system at the moment.</string>
