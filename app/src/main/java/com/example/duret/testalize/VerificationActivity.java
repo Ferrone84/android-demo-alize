@@ -1,22 +1,9 @@
 package com.example.duret.testalize;
 
 import android.graphics.Color;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Handler;
-import android.view.KeyEvent;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
-
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 
 import AlizeSpkRec.AlizeException;
 import AlizeSpkRec.SimpleSpkDetSystem;
@@ -113,5 +100,12 @@ public class VerificationActivity extends RecordActivity {
             }
         }
         resultText.setText(result);
+
+        try {
+            alizeSystem.resetAudio();
+            alizeSystem.resetFeatures();
+        } catch (AlizeException e) {
+            e.printStackTrace();
+        }
     }
 }

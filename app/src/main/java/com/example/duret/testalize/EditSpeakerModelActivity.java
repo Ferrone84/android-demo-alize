@@ -1,29 +1,16 @@
 package com.example.duret.testalize;
 
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 
 import AlizeSpkRec.AlizeException;
 import AlizeSpkRec.IdAlreadyExistsException;
-import AlizeSpkRec.SimpleSpkDetSystem;
 
 public class EditSpeakerModelActivity extends RecordActivity {
 

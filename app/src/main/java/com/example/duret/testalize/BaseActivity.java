@@ -1,11 +1,7 @@
 package com.example.duret.testalize;
 
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.widget.Toast;
@@ -17,9 +13,6 @@ import java.util.Map;
 
 import AlizeSpkRec.AlizeException;
 import AlizeSpkRec.SimpleSpkDetSystem;
-
-import static android.Manifest.permission.RECORD_AUDIO;
-import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
 public class BaseActivity extends AppCompatActivity {
 
