@@ -52,7 +52,8 @@ public class EditSpeakerModelActivity extends RecordActivity {
             timeText.setVisibility(View.INVISIBLE);
         }
         else {
-            editSpeakerName.setText(speakerName);
+            currentSpeakerName = speakerName;
+            editSpeakerName.setText(currentSpeakerName);
         }
 
         String title = "Edit '" + speakerName + "' Model";
