@@ -1,56 +1,78 @@
 package com.example.duret.testalize;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.view.KeyEvent;
 import android.widget.Toast;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Locale;
+import java.util.Map;
+
+import AlizeSpkRec.AlizeException;
+import AlizeSpkRec.SimpleSpkDetSystem;
 
 import static android.Manifest.permission.RECORD_AUDIO;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 
 public class BaseActivity extends AppCompatActivity {
 
-    public static final int RequestPermissionCode = 1;
+    protected Locale defaultLanguage;
+    protected SimpleSpkDetSystem alizeSystem;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        defaultLanguage = Locale.getDefault();
+
+        try {
+            simpleSpkDetSystemInit();
+        }
+        catch (AlizeException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected void startActivity(Class targetActivity) {
+        startActivity(targetActivity, null);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            finish();
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    protected void startActivity(Class targetActivity, Map<String, Object> params) {
+        Intent intent = new Intent(BaseActivity.this, targetActivity);
+
+        if (params != null) {
+            for (Map.Entry<String, Object> entry : params.entrySet()) {
+                intent.putExtra(entry.getKey(), entry.getValue().toString());
+            }
+        }
+        startActivity(intent);
+    }
 
     protected void makeToast(String text) {
         Toast.makeText(BaseActivity.this, text, Toast.LENGTH_SHORT).show();
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[],
-                                           @NonNull int[] grantResults) {
-        if (requestCode == RequestPermissionCode) {
-            if (grantResults.length > 0) {
-                boolean StoragePermission = grantResults[0] ==
-                        PackageManager.PERMISSION_GRANTED;
-                boolean RecordPermission = grantResults[1] ==
-                        PackageManager.PERMISSION_GRANTED;
+    private void simpleSpkDetSystemInit() throws IOException, AlizeException {
+        // Initialization:
+        alizeSystem = SharedAlize.getInstance(getApplicationContext());
 
-                if (StoragePermission && RecordPermission) {
-                    Toast.makeText(BaseActivity.this, "Permission Granted",
-                            Toast.LENGTH_LONG).show();
-                } else {
-                    Toast.makeText(BaseActivity.this,
-                            "Permission Denied", Toast.LENGTH_LONG).show();
-                }
-            }
-        }
-    }
-
-    public boolean checkPermission() {
-        int result = ContextCompat.checkSelfPermission(getApplicationContext(),
-                WRITE_EXTERNAL_STORAGE);
-        int result1 = ContextCompat.checkSelfPermission(getApplicationContext(),
-                RECORD_AUDIO);
-        return result == PackageManager.PERMISSION_GRANTED &&
-                result1 == PackageManager.PERMISSION_GRANTED;
-    }
-
-    protected void requestPermission() {
-        ActivityCompat.requestPermissions(BaseActivity.this, new
-                String[]{WRITE_EXTERNAL_STORAGE, RECORD_AUDIO}, RequestPermissionCode);
+        // We also load the background model from the application assets
+        InputStream backgroundModelAsset = getApplicationContext().getAssets().open("gmm/world.gmm");
+        alizeSystem.loadBackgroundModel(backgroundModelAsset);
+        backgroundModelAsset.close();
     }
 }

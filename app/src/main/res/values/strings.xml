@@ -16,4 +16,6 @@
     <string name="speakerExist">This speaker name already exists!</string>
     <string name="recording_completed">Recording Completed</string>
     <string name="identify_speaker">Identify a speaker</string>
+    <string name="permission_error_message">You cannot use this app without this permission.</string>
+    <string name="no_sound_detected_recoloc">No sound detected, try again.</string>
 </resources>

@@ -16,4 +16,6 @@
     <string name="speakerExist">Ce nom de locuteur existe déjà !</string>
     <string name="recording_completed">Enregistrement effectué.</string>
     <string name="identify_speaker">Identifier un locuteur</string>
+    <string name="permission_error_message">Vous ne pouvez pas utiliser cette app sans cette permission.</string>
+    <string name="no_sound_detected_recoloc">Aucune parole détectée, veuillez réessayer.</string>
 </resources>
