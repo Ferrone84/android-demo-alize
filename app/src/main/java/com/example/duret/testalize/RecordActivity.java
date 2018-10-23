@@ -6,6 +6,7 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
@@ -22,6 +23,11 @@ import AlizeSpkRec.AlizeException;
 
 import static android.Manifest.permission.RECORD_AUDIO;
 
+/**
+ * This class is meant to be used by activities that want to use Alize record features.
+ *
+ * @author Nicolas Duret
+ */
 public class RecordActivity extends BaseActivity {
 
     protected static final int RECORDER_SAMPLERATE = 8000;
@@ -35,7 +41,7 @@ public class RecordActivity extends BaseActivity {
     protected boolean recordExists = false;
     protected AudioRecord recorder = null;
     protected Button startRecordButton, stopRecordButton;
-    protected Thread recordingThread = null, addSamplesThread = null;
+    protected Thread recordingThread = null, addSamplesThread = null, timerThread = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +60,7 @@ public class RecordActivity extends BaseActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+                                           @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case 42: {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -68,6 +74,9 @@ public class RecordActivity extends BaseActivity {
         }
     }
 
+    /**
+     * Method that start the record of the android microphone and use Alize features.
+     */
     protected void startRecording() {
         if (!checkPermission()) {
             requestPermission();
@@ -78,6 +87,7 @@ public class RecordActivity extends BaseActivity {
         stopRecordButton.setVisibility(View.VISIBLE);
         timeText.setText(R.string.default_time);
 
+        //Start the record
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                 RECORDER_SAMPLERATE, RECORDER_CHANNELS,
                 RECORDER_AUDIO_ENCODING, bufferElements2Rec * bytesPerElement);
@@ -85,8 +95,9 @@ public class RecordActivity extends BaseActivity {
 
         if (recordExists) {
             try {
-                alizeSystem.resetAudio();
-                alizeSystem.resetFeatures();
+                //Reset input, since we will not make any more use of this audio signal.
+                alizeSystem.resetAudio();       //Reset the audio samples of the Alize system.
+                alizeSystem.resetFeatures();    //Reset the features of the Alize system.
             } catch (AlizeException e) {
                 e.printStackTrace();
             }
@@ -95,15 +106,18 @@ public class RecordActivity extends BaseActivity {
 
         final List<short[]> audioPackets = Collections.synchronizedList(new ArrayList<short[]>());
 
+        //This thread is meant to record the audio samples with android recorder.
         recordingThread = new Thread(new Runnable() {
             private Handler handler = new Handler();
 
+            @Override
             public void run() {
                 startTime = System.currentTimeMillis();
 
                 short[] tmpAudioSamples = new short[bufferElements2Rec];
                 while (recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
                     int samplesRead = recorder.read(tmpAudioSamples, 0, bufferElements2Rec);
+
                     if (samplesRead > 0) {
                         short[] samples = new short[samplesRead];
                         System.arraycopy(tmpAudioSamples, 0, samples, 0, samplesRead);
@@ -112,20 +126,11 @@ public class RecordActivity extends BaseActivity {
                             audioPackets.add(samples);
                         }
                     }
-
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            long currentTime = System.currentTimeMillis() - startTime;
-                            String result = new SimpleDateFormat("mm:ss:SS", defaultLanguage)
-                                    .format(new Date(currentTime));
-                            timeText.setText(result);
-                        }
-                    });
                 }
             }
         }, "AudioRecorder Thread");
 
+        //This thread is meant to use the audio samples and send them to the Alize system.
         addSamplesThread = new Thread(new Runnable() {
             private Handler handler = new Handler();
 
@@ -136,6 +141,7 @@ public class RecordActivity extends BaseActivity {
                     while ((recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING)
                             || (!audioPackets.isEmpty())) {
                         nextElement = null;
+
                         synchronized (audioPackets) {
                             if (!audioPackets.isEmpty()) {
                                 nextElement = audioPackets.get(0);
@@ -144,6 +150,7 @@ public class RecordActivity extends BaseActivity {
                         }
                         if (nextElement != null) {
                             try {
+                                //Receive an audio signal as 16-bit signed integer linear PCM, parameterize it and add it to the feature server.
                                 alizeSystem.addAudio(nextElement);
                             } catch (AlizeException e) {
                                 e.printStackTrace();
@@ -152,13 +159,14 @@ public class RecordActivity extends BaseActivity {
                     }
 
                     try {
-                        recordingThread.join();
+                        recordingThread.join(); //Wait the recordingThread to end.
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                     while (!audioPackets.isEmpty()) {
                         nextElement = audioPackets.get(0);
                         audioPackets.remove(0);
+
                         if (nextElement != null) {
                             try {
                                 alizeSystem.addAudio(nextElement);
@@ -178,10 +186,39 @@ public class RecordActivity extends BaseActivity {
             }
         }, "addSamples Thread");
 
+        //This thread is meant to increase the timer with the current time.
+        timerThread = new Thread(new Runnable() {
+            private Handler handler = new Handler();
+
+            @Override
+            public void run() {
+                while((recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING)) {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            long currentTime = System.currentTimeMillis() - startTime;
+                            String result = new SimpleDateFormat("mm:ss:SS", defaultLanguage)
+                                    .format(new Date(currentTime));
+                            timeText.setText(result);
+                        }
+                    });
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }, "Timer Thread");
+
         recordingThread.start();
         addSamplesThread.start();
+        timerThread.start();
     }
 
+    /**
+     * Stop the record and reset record features.
+     */
     protected void stopRecording() {
         stopRecordButton.setVisibility(View.INVISIBLE);
 
@@ -190,6 +227,7 @@ public class RecordActivity extends BaseActivity {
             try {
                 recordingThread.join();
                 addSamplesThread.join();
+                timerThread.join();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -205,5 +243,8 @@ public class RecordActivity extends BaseActivity {
         }
     }
 
+    /**
+     * Method meant to be inherited and implemented with the post recording processes.
+     */
     protected void afterRecordProcessing() {}
 }

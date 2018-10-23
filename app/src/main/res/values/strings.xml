@@ -18,4 +18,5 @@
     <string name="identify_speaker">Identify a speaker</string>
     <string name="permission_error_message">You cannot use this app without this permission.</string>
     <string name="no_sound_detected_recoloc">No sound detected, try again.</string>
+    <string name="error_remove_speaker">An error occurred while the system tried to remove this speaker.</string>
 </resources>

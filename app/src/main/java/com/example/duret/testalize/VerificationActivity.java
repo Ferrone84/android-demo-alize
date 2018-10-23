@@ -8,6 +8,13 @@ import android.widget.TextView;
 import AlizeSpkRec.AlizeException;
 import AlizeSpkRec.SimpleSpkDetSystem;
 
+/**
+ * Activity meant to identify or verify a speaker.
+ * Identify is used when the system try to recognize a speaker in the system with the current record.
+ * Verify is used when the system is listening to the current record and determine if it's the right speaker or not.
+ *
+ * @author Nicolas Duret
+ */
 public class VerificationActivity extends RecordActivity {
 
     private final int ERROR_COLOR = Color.RED;
@@ -23,7 +30,6 @@ public class VerificationActivity extends RecordActivity {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.verification);
 
-            alizeSystem = SharedAlize.getInstance(getApplicationContext());
             speakerName = getIntent().getStringExtra("speakerName");
             resultText = findViewById(R.id.result_text);
             startRecordButton = findViewById(R.id.startBtn);
@@ -57,7 +63,6 @@ public class VerificationActivity extends RecordActivity {
         }
     }
 
-
     protected void afterRecordProcessing() {
         String result = "Error";
 
@@ -65,6 +70,8 @@ public class VerificationActivity extends RecordActivity {
             //Try to match a speaker with the record
 
             try {
+                //This is the other main task of speaker recognition: compare a recording with all the speakers
+                //known to the system in order to determine whose voice it is (or reject it as unknown).
                 SimpleSpkDetSystem.SpkRecResult identificationResult = alizeSystem.identifySpeaker();
 
                 if (identificationResult.match) {
@@ -81,9 +88,10 @@ public class VerificationActivity extends RecordActivity {
             }
         }
         else {
-            //compare the record with the speaker model
+            //Compare the record with the speaker model
 
             try {
+                //Compare the audio signal with the speaker model we created earlier.
                 SimpleSpkDetSystem.SpkRecResult verificationResult = alizeSystem.verifySpeaker(speakerName);
 
                 if (verificationResult.match) {
@@ -102,8 +110,9 @@ public class VerificationActivity extends RecordActivity {
         resultText.setText(result);
 
         try {
-            alizeSystem.resetAudio();
-            alizeSystem.resetFeatures();
+            //Reset input, since we will not make any more use of this audio signal.
+            alizeSystem.resetAudio();       //Reset the audio samples of the Alize system.
+            alizeSystem.resetFeatures();    //Reset the features of the Alize system.
         } catch (AlizeException e) {
             e.printStackTrace();
         }

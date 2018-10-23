@@ -14,9 +14,18 @@ import java.util.Map;
 import AlizeSpkRec.AlizeException;
 import AlizeSpkRec.SimpleSpkDetSystem;
 
+/**
+ *  This class is the base activity.
+ *  All activities will inherit from it.
+ *
+ * @author Nicolas Duret
+ */
 public class BaseActivity extends AppCompatActivity {
 
     protected Locale defaultLanguage;
+    /**
+     *  Allow to use Alize features.
+     */
     protected SimpleSpkDetSystem alizeSystem;
 
     @Override
@@ -32,10 +41,6 @@ public class BaseActivity extends AppCompatActivity {
         }
     }
 
-    protected void startActivity(Class targetActivity) {
-        startActivity(targetActivity, null);
-    }
-
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
@@ -44,6 +49,15 @@ public class BaseActivity extends AppCompatActivity {
         return super.onKeyDown(keyCode, event);
     }
 
+    protected void startActivity(Class targetActivity) {
+        startActivity(targetActivity, null);
+    }
+
+    /**
+     * Start the specified activity with arguments in params.
+     * @param targetActivity The targeted activity.
+     * @param params Params passed to the activity.
+     */
     protected void startActivity(Class targetActivity, Map<String, Object> params) {
         Intent intent = new Intent(BaseActivity.this, targetActivity);
 
@@ -55,10 +69,19 @@ public class BaseActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    /**
+     * Display the text specified on the bottom of the screen.
+     * @param text Text you want to display.
+     */
     protected void makeToast(String text) {
         Toast.makeText(BaseActivity.this, text, Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * Innitialize the Alize system and call the Alize singleton instance.
+     * @throws IOException Throws if the config or wold model files doesn't exists.
+     * @throws AlizeException Thorws if there was a problem in the Alize system execution.
+     */
     private void simpleSpkDetSystemInit() throws IOException, AlizeException {
         // Initialization:
         alizeSystem = SharedAlize.getInstance(getApplicationContext());

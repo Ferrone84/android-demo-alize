@@ -7,19 +7,22 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
-import java.io.IOException;
-
 import AlizeSpkRec.AlizeException;
 import AlizeSpkRec.IdAlreadyExistsException;
 
+/**
+ * Activity use to create and edit a speaker model.
+ *
+ * @author Nicolas Duret
+ */
 public class EditSpeakerModelActivity extends RecordActivity {
 
     private String[] speakers;
-    private String currentSpeakerName, originalSpeakerId;
+    private Button updateSpeaker;
     private EditText editSpeakerName;
     private boolean newSpeaker = false;
     private boolean speakerIdAlreadyExists = false;
-    private Button updateSpeaker;
+    private String currentSpeakerName, originalSpeakerId;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -28,10 +31,9 @@ public class EditSpeakerModelActivity extends RecordActivity {
         setContentView(R.layout.edit_speaker_model);
 
         try {
-            alizeSystem = SharedAlize.getInstance(getApplicationContext());
-            speakers = alizeSystem.speakerIDs();
+            speakers = alizeSystem.speakerIDs(); //Get all speakers name.
         }
-        catch (IOException | AlizeException e) {
+        catch (AlizeException e) {
             e.printStackTrace();
         }
 
@@ -88,8 +90,10 @@ public class EditSpeakerModelActivity extends RecordActivity {
         @Override
         public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
             currentSpeakerName = charSequence.toString();
+
             if (speakers.length != 0) {
                 speakerIdAlreadyExists = false;
+
                 for (String spkId : speakers) {
                     if (spkId.equals(currentSpeakerName) && !currentSpeakerName.equals(originalSpeakerId)) {
                         speakerIdAlreadyExists = true;
@@ -124,19 +128,22 @@ public class EditSpeakerModelActivity extends RecordActivity {
         public void onClick(View view) {
             try {
                 if (newSpeaker) {
+                    //Create a speaker model with the data previously normalized with addAudio.
                     alizeSystem.createSpeakerModel(currentSpeakerName);
                 }
                 else if (!originalSpeakerId.equals(currentSpeakerName)) {
-                    //TODO modify speaker name in alize system -> updateSpeakerId(originalSpeakerId, speakerId)
-                    if (recordExists)
-                        alizeSystem.adaptSpeakerModel(currentSpeakerName);
+                    if (recordExists) {
+                        //TODO modify speaker name in alize system -> updateSpeakerId(originalSpeakerId, currentSpeakerName)
+                    }
                 }
                 else {
+                    //Change the model of the speaker with the id currentSpeakerName.
                     alizeSystem.adaptSpeakerModel(currentSpeakerName);
                 }
 
-                alizeSystem.resetAudio();
-                alizeSystem.resetFeatures();
+                //Reset input, since we will not make any more use of this audio signal.
+                alizeSystem.resetAudio();       //Reset the audio samples of the Alize system.
+                alizeSystem.resetFeatures();    //Reset the features of the Alize system.
                 finish();
             } catch (AlizeException e) {
                 e.printStackTrace();

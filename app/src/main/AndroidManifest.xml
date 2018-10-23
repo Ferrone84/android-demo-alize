@@ -20,6 +20,7 @@
         <activity android:name=".BaseActivity" />
         <activity android:name=".EditSpeakerModelActivity" android:label="@string/edit_speaker_model"/>
         <activity android:name=".VerificationActivity" android:label="@string/verification"/>
+        <activity android:name=".RecordActivity" />
 
     </application>
 

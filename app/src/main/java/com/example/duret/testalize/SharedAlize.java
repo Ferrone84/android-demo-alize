@@ -3,8 +3,15 @@ package com.example.duret.testalize;
 import java.io.IOException;
 import java.io.InputStream;
 import android.content.Context;
-import AlizeSpkRec.*;
 
+import AlizeSpkRec.AlizeException;
+import AlizeSpkRec.SimpleSpkDetSystem;
+
+/**
+ * Singleton meant to get the instance of the Alize system without initializing it every time.
+ *
+ * @author Nicolas Duret
+ */
 class SharedAlize {
     private static SimpleSpkDetSystem alizeSystem;
 
