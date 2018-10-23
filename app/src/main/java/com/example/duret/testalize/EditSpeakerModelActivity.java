@@ -154,7 +154,11 @@ public class EditSpeakerModelActivity extends RecordActivity {
     };
 
     protected void afterRecordProcessing() {
-        if (!currentSpeakerName.isEmpty() && !speakerIdAlreadyExists) {
+        if (emptyRecord) {
+            updateSpeaker.setEnabled(false);
+            makeToast(getResources().getString(R.string.no_sound_detected_recoloc));
+        }
+        else if (!currentSpeakerName.isEmpty() && !speakerIdAlreadyExists) {
             updateSpeaker.setEnabled(true);
         }
     }

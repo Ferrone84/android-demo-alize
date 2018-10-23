@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -38,6 +39,7 @@ public class RecordActivity extends BaseActivity {
 
     protected long startTime;
     protected TextView timeText;
+    protected boolean emptyRecord = false;
     protected boolean recordExists = false;
     protected AudioRecord recorder = null;
     protected Button startRecordButton, stopRecordButton;
@@ -74,6 +76,21 @@ public class RecordActivity extends BaseActivity {
         }
     }
 
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            try {
+                //Reset input, since we will not make any more use of this audio signal.
+                alizeSystem.resetAudio();       //Reset the audio samples of the Alize system.
+                alizeSystem.resetFeatures();    //Reset the features of the Alize system.
+            } catch (AlizeException e) {
+                e.printStackTrace();
+            }
+            finish();
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
     /**
      * Method that start the record of the android microphone and use Alize features.
      */
@@ -83,6 +100,7 @@ public class RecordActivity extends BaseActivity {
             return;
         }
 
+        emptyRecord = true;
         startRecordButton.setVisibility(View.INVISIBLE);
         stopRecordButton.setVisibility(View.VISIBLE);
         timeText.setText(R.string.default_time);
@@ -120,7 +138,13 @@ public class RecordActivity extends BaseActivity {
 
                     if (samplesRead > 0) {
                         short[] samples = new short[samplesRead];
-                        System.arraycopy(tmpAudioSamples, 0, samples, 0, samplesRead);
+                        //System.arraycopy(tmpAudioSamples, 0, samples, 0, samplesRead);
+                        for (int i=0; i < samples.length; i++) {
+                            samples[i] = tmpAudioSamples[i];
+                            if (samples[i] != 0) {
+                                emptyRecord = false;
+                            }
+                        }
 
                         synchronized (audioPackets) {
                             audioPackets.add(samples);
@@ -137,51 +161,43 @@ public class RecordActivity extends BaseActivity {
             @Override
             public void run() {
                 short[] nextElement;
+
+                while ((recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING)
+                        || (!audioPackets.isEmpty())) {
+                    nextElement = null;
+
+                    synchronized (audioPackets) {
+                        if (!audioPackets.isEmpty()) {
+                            nextElement = audioPackets.get(0);
+                            audioPackets.remove(0);
+                        }
+                    }
+                    if (nextElement != null) {
+                        try {
+                            //Receive an audio signal as 16-bit signed integer linear PCM, parameterize it and add it to the feature server.
+                            alizeSystem.addAudio(nextElement);
+                        } catch (AlizeException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
                 try {
-                    while ((recorder.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING)
-                            || (!audioPackets.isEmpty())) {
-                        nextElement = null;
+                    recordingThread.join(); //Wait the recordingThread to end.
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                while (!audioPackets.isEmpty()) {
+                    nextElement = audioPackets.get(0);
+                    audioPackets.remove(0);
 
-                        synchronized (audioPackets) {
-                            if (!audioPackets.isEmpty()) {
-                                nextElement = audioPackets.get(0);
-                                audioPackets.remove(0);
-                            }
-                        }
-                        if (nextElement != null) {
-                            try {
-                                //Receive an audio signal as 16-bit signed integer linear PCM, parameterize it and add it to the feature server.
-                                alizeSystem.addAudio(nextElement);
-                            } catch (AlizeException e) {
-                                e.printStackTrace();
-                            }
+                    if (nextElement != null) {
+                        try {
+                            alizeSystem.addAudio(nextElement);
+                        } catch (AlizeException e) {
+                            e.printStackTrace();
                         }
                     }
-
-                    try {
-                        recordingThread.join(); //Wait the recordingThread to end.
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    while (!audioPackets.isEmpty()) {
-                        nextElement = audioPackets.get(0);
-                        audioPackets.remove(0);
-
-                        if (nextElement != null) {
-                            try {
-                                alizeSystem.addAudio(nextElement);
-                            } catch (AlizeException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                } catch (Throwable e) {
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            makeToast(getResources().getString(R.string.no_sound_detected_recoloc));
-                        }
-                    });
                 }
             }
         }, "addSamples Thread");
