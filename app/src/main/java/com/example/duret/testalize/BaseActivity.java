@@ -1,9 +1,13 @@
 package com.example.duret.testalize;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import java.io.IOException;
@@ -27,11 +31,14 @@ public class BaseActivity extends AppCompatActivity {
      *  Allow to use Alize features.
      */
     protected SimpleSpkDetSystem alizeSystem;
+    protected SharedPreferences SP;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         defaultLanguage = Locale.getDefault();
+        SP = PreferenceManager.getDefaultSharedPreferences(BaseActivity.this);
+        System.out.println(SP.getString("threshold", "30"));
 
         try {
             simpleSpkDetSystemInit();
@@ -39,6 +46,24 @@ public class BaseActivity extends AppCompatActivity {
         catch (AlizeException | IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_settings) {
+            startActivity(SettingsActivity.class);
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
