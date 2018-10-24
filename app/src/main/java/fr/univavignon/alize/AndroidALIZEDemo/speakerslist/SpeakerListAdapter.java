@@ -1,4 +1,4 @@
-package com.example.duret.testalize.speakerslist;
+package fr.univavignon.alize.AndroidALIZEDemo.speakerslist;
 
 import android.app.Activity;
 import android.content.Context;
@@ -9,8 +9,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
-
-import com.example.duret.testalize.R;
 
 import java.util.List;
 
@@ -38,18 +36,18 @@ public class SpeakerListAdapter extends ArrayAdapter<Speaker> {
         holder = new SpeakerHolder();
         holder.speaker = items.get(position);
 
-        holder.update = row.findViewById(R.id.update_button);
+        holder.update = row.findViewById(fr.univavignon.alize.AndroidALIZEDemo.R.id.update_button);
         holder.update.setTag(holder.speaker);
-        holder.test = row.findViewById(R.id.test_button);
+        holder.test = row.findViewById(fr.univavignon.alize.AndroidALIZEDemo.R.id.test_button);
         if (holder.speaker.getName().isEmpty())
             holder.test.setEnabled(false);
         else
             holder.test.setEnabled(true);
         holder.test.setTag(holder.speaker);
-        holder.remove = row.findViewById(R.id.remove_button);
+        holder.remove = row.findViewById(fr.univavignon.alize.AndroidALIZEDemo.R.id.remove_button);
         holder.remove.setTag(holder.speaker);
 
-        holder.name = row.findViewById(R.id.speaker_name);
+        holder.name = row.findViewById(fr.univavignon.alize.AndroidALIZEDemo.R.id.speaker_name);
 
         row.setTag(holder);
 

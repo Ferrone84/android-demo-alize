@@ -1,4 +1,4 @@
-package com.example.duret.testalize;
+package fr.univavignon.alize.AndroidALIZEDemo;
 
 import android.content.pm.PackageManager;
 import android.media.AudioFormat;

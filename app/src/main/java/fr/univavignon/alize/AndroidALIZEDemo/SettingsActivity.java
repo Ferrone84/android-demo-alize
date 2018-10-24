@@ -1,4 +1,4 @@
-package com.example.duret.testalize;
+package fr.univavignon.alize.AndroidALIZEDemo;
 
 import android.os.Bundle;
 import android.preference.PreferenceActivity;

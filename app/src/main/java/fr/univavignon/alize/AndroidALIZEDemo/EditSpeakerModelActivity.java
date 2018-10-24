@@ -1,4 +1,4 @@
-package com.example.duret.testalize;
+package fr.univavignon.alize.AndroidALIZEDemo;
 
 import android.os.Bundle;
 import android.text.Editable;
@@ -133,7 +133,7 @@ public class EditSpeakerModelActivity extends RecordActivity {
                 }
                 else if (!originalSpeakerId.equals(currentSpeakerName)) {
                     if (recordExists) {
-                        //TODO modify speaker name in alize system -> updateSpeakerId(originalSpeakerId, currentSpeakerName)
+                        //TODO modify speaker name in Alize system -> updateSpeakerId(originalSpeakerId, currentSpeakerName)
                     }
                 }
                 else {

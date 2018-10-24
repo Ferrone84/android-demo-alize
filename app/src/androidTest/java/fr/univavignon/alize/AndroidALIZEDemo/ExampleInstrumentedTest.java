@@ -1,4 +1,4 @@
-package com.example.duret.testalize;
+package fr.univavignon.alize.AndroidALIZEDemo;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under list_item.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.example.duret.testalize", appContext.getPackageName());
+        assertEquals("fr.univavignon.alize.AndroidALIZEDemo", appContext.getPackageName());
     }
 }

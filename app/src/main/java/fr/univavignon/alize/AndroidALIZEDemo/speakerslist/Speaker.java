@@ -1,4 +1,4 @@
-package com.example.duret.testalize.speakerslist;
+package fr.univavignon.alize.AndroidALIZEDemo.speakerslist;
 
 import java.io.Serializable;
 

@@ -1,4 +1,4 @@
-package com.example.duret.testalize;
+package fr.univavignon.alize.AndroidALIZEDemo;
 
 import android.graphics.Color;
 import android.os.Bundle;

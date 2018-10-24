@@ -1,4 +1,4 @@
-package com.example.duret.testalize;
+package fr.univavignon.alize.AndroidALIZEDemo;
 
 import android.os.Bundle;
 import android.view.View;
@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import AlizeSpkRec.AlizeException;
-import com.example.duret.testalize.speakerslist.Speaker;
-import com.example.duret.testalize.speakerslist.SpeakerListAdapter;
+import fr.univavignon.alize.AndroidALIZEDemo.speakerslist.Speaker;
+import fr.univavignon.alize.AndroidALIZEDemo.speakerslist.SpeakerListAdapter;
 
 /**
  * This activity is meant to manage the speakers list.
